@@ -16,15 +16,15 @@ class DataError(Exception): # classe de erros
 class Storage:
     '''
     Classe para controlar os dados do estoque.
-        -> Os dados são armazenados em um dataframe do pandas.
-        -> Cada ítem cadastrado deve ter id e nome diferendes.
-        -> Colunas:
-            |- id: A principal idendificação do produto (não confundir com o index do dataframe, o id do produto não deve mudar)
-            |- nome: Nome do produto (não podem haver dois produtos com o mesmo nome)
-            |- p_venda: Preço de venda do produto.
-            |- p_custo: Preço que esse produto custou (este dado irá permitir o cálculo do lucro na venda do produto).
-            |- quantidade: Quantidade do produto em estoque.
-            |- descricao: Uma descrição sobre o produto.
+        |-> Os dados são armazenados em um dataframe do pandas.
+        |-> Cada ítem cadastrado deve ter id e nome diferendes.
+        |-> Colunas:
+            |-> id: A principal idendificação do produto (não confundir com o index do dataframe, o id do produto não deve mudar)
+            |-> nome: Nome do produto (não podem haver dois produtos com o mesmo nome)
+            |-> p_venda: Preço de venda do produto.
+            |-> p_custo: Preço que esse produto custou (este dado irá permitir o cálculo do lucro na venda do produto).
+            |-> quantidade: Quantidade do produto em estoque.
+            |-> descricao: Uma descrição sobre o produto.
     '''
     def __init__(self, filename):
         self.filename = filename
@@ -62,8 +62,29 @@ class Storage:
         Args:
             id_item: id do produto a ser deletado.
         '''
-        real_index = self.dataframe.loc[self.dataframe['id'] == id_item].index.item()
-        self.dataframe = self.dataframe.drop(index=real_index)
+        self.dataframe = self.dataframe.drop(index=self.get_df_index(id_item))
+    
+    def get_df_index(self, id_item):
+        '''
+        Função para pegar o índice do item no dataframe.
+        '''
+        return self.dataframe.loc[self.dataframe['id'] == id_item].index.item()
+    
+    @autosave
+    def modify(self, id_item, modifications):
+        '''
+        Modificar algum produto.
+
+        Args:
+            id_item: O id do produto a ser modificado.
+            modifications: um dicionário em que a 'key' indica a coluna do item e o 'value' o novo valor.
+                |-> Dict{nome da coluna: novo valor}
+        '''
+        for key, value in modifications.items(): 
+            if key in ('id', 'nome') and value in self.dataframe[key].tolist():
+                raise DataError(f'Produto com "{key}" = "{value}" já está cadastrado.')
+            else:
+                self.dataframe.at[id_item, key] = value
     
     def save(self):
         '''
