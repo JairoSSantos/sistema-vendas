@@ -1,12 +1,15 @@
 import pandas as pd
-from random import randint
+from datetime import date, datetime
+import os
 
 STORAGE_FILENAME = 'storage.csv' # caminho até o arquivo de estoque
+SALES_PATH = 'sales/' # caminho até a pasta de vendas
 
 def autosave(function):
-    def dec_function(self, *args, **kwargs):
-        function(self, *args, **kwargs)
-        self.save()
+    def dec_function(itself, *args, **kwargs):
+        y = function(itself, *args, **kwargs)
+        itself.save()
+        if y: return y
     return dec_function
 
 class DataError(Exception): # classe de erros
@@ -17,7 +20,7 @@ class Storage:
     '''
     Classe para controlar os dados do estoque.
         |-> Os dados são armazenados em um dataframe do pandas.
-        |-> Cada ítem cadastrado deve ter id e nome diferendes.
+        |-> Cada ítem cadastrado deve ter id e nome único.
         |-> Colunas:
             |-> id: A principal idendificação do produto (não confundir com o index do dataframe, o id do produto não deve mudar)
             |-> nome: Nome do produto (não podem haver dois produtos com o mesmo nome)
@@ -98,9 +101,61 @@ class Storage:
         '''
         self.dataframe = pd.read_csv(self.filename)
 
+class Sales:
+    '''
+    Classe para controlar os dados das vendas.
+        |-> As vendas são salvas por mês.
+        |-> Os dados são armazenados em um dataframe do pandas.
+        |-> Cada ítem cadastrado deve ter id diferente.
+        |-> Colunas:
+            |-> id: A principal idendificação da venda (não confundir com o index do dataframe, o id da venda não deve mudar)
+            |-> horario: A data e hora em que a venda foi realizada
+            |-> produtos: produtos vendidos (formato: produto1-produto2-...; produto = id do produto/quantidade)
+            |-> total: Valor total da venda.
+            |-> pago: Valor pago pelo cliente.
+            |-> formato: Formato de pagamento (dinheiro, cartão de débito, cartão de crédito, ...).
+            |-> mod: Alterações no valor final (descondos, acécimos, ...).
+    '''
+    def __init__(self, path):
+        self.path = path
+        self.filename = None
+        self.update()
+    
+    @autosave
+    def add(self, produtos, total, pago=0, formato='dinheiro', mod=None):
+        id_item = 0
+        while id_item in self.dataframe['id'].tolist(): id_item += 1
+        self.dataframe = self.dataframe.append({
+            'id': id_item,
+            'horario': datetime.now().strftime('%Y/%m/%d - %H:%M'),
+            'produtos':'-'.join(['/'.join(map(str, produto)) for produto in produtos]), 
+            'total':total, 
+            'pago':pago, 
+            'formato':formato,
+            'mod':mod
+        }, ignore_index=True)
+    
+    def save(self):
+        '''
+        Salvar os dados.
+        '''
+        self.dataframe.to_csv(self.filename, index=False)
+    
+    def update(self):
+        '''
+        Atualizar o dataframe.
+        '''
+        self.filename = os.path.join(self.path, date.today().strftime('%Y-%m') + '.csv')
+        try: self.dataframe = pd.read_csv(self.filename)
+        except FileNotFoundError:
+            self.dataframe = pd.DataFrame(columns=['id', 'horario', 'produtos', 'total', 'pago', 'formato', 'mod'])
+            self.save()
+            self.update()
+
 def init():
     '''
     Cria variáveis globais para acessar as classes de contole de dados.
     '''
-    global storage
+    global storage, sales
     storage = Storage(STORAGE_FILENAME)
+    sales = Sales(SALES_PATH)
