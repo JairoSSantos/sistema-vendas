@@ -28,13 +28,15 @@ class Storage:
             |-> p_custo: Preço que esse produto custou (este dado irá permitir o cálculo do lucro na venda do produto).
             |-> quantidade: Quantidade do produto em estoque.
             |-> descricao: Uma descrição sobre o produto.
+            |-> data_cadastro: Data em que o item foi cadastrado.
+            |-> data_mod: Data da úlitima modificação do produto.
     '''
     def __init__(self, filename):
         self.filename = filename
         self.update()
     
     @autosave
-    def add(self, nome, p_venda, p_custo, quantidade=0, descricao=''):
+    def add(self, id_item, nome, p_venda, p_custo, quantidade, descricao):
         '''
         Adicionar item ao estoque.
 
@@ -46,15 +48,20 @@ class Storage:
         '''
         if nome in self.dataframe['nome'].tolist():
             raise DataError('Nome já cadastrado.')
-        id_item = 0
-        while id_item in self.dataframe['id'].tolist(): id_item += 1
+        elif nome == '':
+            raise DataError('Nome não informado.')
+        if id_item in self.dataframe['id'].tolist():
+            raise DataError('Código já cadastrado.')
+        today = date.today().strftime('%d/%m/%Y')
         self.dataframe = self.dataframe.append({
             'id': id_item,
             'nome':nome, 
             'p_venda':p_venda, 
             'p_custo':p_custo, 
             'quantidade':quantidade,
-            'descricao':descricao
+            'descricao':descricao,
+            'data_cadastro':today,
+            'data_mod':today
         }, ignore_index=True)
     
     @autosave
@@ -67,11 +74,37 @@ class Storage:
         '''
         self.dataframe = self.dataframe.drop(index=self.get_df_index(id_item))
     
+    def generate_id(self):
+        '''
+        Gerar novo código.
+        returns:
+            int
+        '''
+        id_item = 0
+        while id_item in self.dataframe['id'].tolist(): id_item += 1
+        return id_item
+    
     def get_df_index(self, id_item):
         '''
         Função para pegar o índice do item no dataframe.
         '''
         return self.dataframe.loc[self.dataframe['id'] == id_item].index.item()
+    
+    def get_dict(self): 
+        '''
+        Pegar dataframe como dicionário.
+        returns:
+            dicionário com os dados do dataframe.
+        '''
+        return self.dataframe.to_dict('index')
+    
+    def get_size(self):
+        '''
+        Pegar o tamanho do estoque.
+        returns:
+            valor inteiro referente a quantidade de itens cadastrados.
+        '''
+        return len(self.dataframe)
     
     @autosave
     def modify(self, id_item, modifications):

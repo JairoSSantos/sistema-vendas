@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import data
 
 class App:
@@ -14,6 +15,7 @@ class App:
 
         self.frames = {}
         self.labels = {'estoque':[], 'vendas':[]}
+        self.string_var = {}
         self.entrys = {'estoque':{}, 'vendas':{}}
         self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
@@ -35,16 +37,18 @@ class App:
             label.grid(row=i, column=0, pady=2)
             self.labels['estoque'].append(label)
 
-        entrys_keys = ['code', 'nome', 'p_venda', 'p_custo', 'quantidade', 'desc']
+        entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']
         for i, key in enumerate(entrys_keys):
             entry = tk.Entry(self.frames['estoque']['produto'])
             entry.grid(row=i, column=1, padx=[0, 10])
             self.entrys['estoque'][key] = entry
 
         button_width = 10
-        self.buttons['estoque']['cadastrar'] = tk.Button(self.frames['estoque']['produto'], text='Cadastrar', width=button_width)
+        self.buttons['estoque']['cadastrar'] = tk.Button(self.frames['estoque']['produto'], 
+            text='Cadastrar', width=button_width, command=self.register)
         self.buttons['estoque']['cadastrar'].grid(row=6, column=0, pady=10)
-        self.buttons['estoque']['excluir'] = tk.Button(self.frames['estoque']['produto'], text='Excluir', width=button_width)
+        self.buttons['estoque']['excluir'] = tk.Button(self.frames['estoque']['produto'], 
+            text='Excluir', width=button_width, command=self.delete)
         self.buttons['estoque']['excluir'].grid(row=6, column=1, pady=10)
         self.buttons['estoque']['filtrar'] = tk.Button(self.frames['estoque']['pesquisar'], text='Filtrar', width=button_width)
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
@@ -72,7 +76,9 @@ class App:
 
         self.frames['estoque']['relatório'] = tk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['relatório'].pack(pady=5, padx=5, fill='x')
-        self.labels['estoque'].append(tk.Label(self.frames['estoque']['relatório'], text='Produtos cadastrados:', width=30, anchor='w'))
+        self.svar_ncadastros = tk.StringVar()
+        self.labels['estoque'].append(tk.Label(self.frames['estoque']['relatório'], 
+            text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.svar_ncadastros))
         self.labels['estoque'][-1].pack(side=tk.LEFT)
         self.buttons['estoque']['relatório'] = tk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
@@ -124,7 +130,46 @@ class App:
         self.notebook_main.add(self.frames['vendas']['main'], text='Vendas')
         self.notebook_main.grid(row=0, column=0)
 
+        self.update('estoque')
+    
+    def delete(self):
+        try: 
+            item = self.trees['estoque'].item(self.trees['estoque'].focus())
+            id_item = int(item['text'])
+        except ValueError: messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
+        else: 
+            if messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][0])):
+                data.storage.delete(id_item)
+        self.update('estoque')
+    
+    def register(self):
+        try:
+            id_item = int(self.entrys['estoque']['id'].get())
+            nome = str(self.entrys['estoque']['nome'].get())
+            p_venda = float(self.entrys['estoque']['p_venda'].get().replace(',', '.'))
+            p_custo = float(self.entrys['estoque']['p_custo'].get().replace(',', '.'))
+            quantidade = self.entrys['estoque']['quantidade'].get()
+            if quantidade == '': quantidade = 0
+            descricao = str(self.entrys['estoque']['descricao'].get())
+        except ValueError: messagebox.showwarning('Erro ao cadastrar produto!', 'Preencha os campos corretamente.')
+        else:
+            try: data.storage.add(id_item, nome, p_venda, p_custo, quantidade, descricao)
+            except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
+            else:
+                for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+                self.update('estoque')
+    
+    def update(self, key):
+        if key == 'estoque':
+            for i in self.trees[key].get_children(): self.trees[key].delete(i)
+            for i, item in data.storage.get_dict().items():
+                self.trees[key].insert('', i, text=item['id'], values=list(item.values())[1:])
+            self.svar_ncadastros.set(f'Produtos cadastrados: {data.storage.get_size()}')
+            self.entrys['estoque']['id'].delete(0, tk.END)
+            self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
+
 if __name__ == '__main__':
+    data.init()
     root = tk.Tk()
     app = App(root)
     root.mainloop()
