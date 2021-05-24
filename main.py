@@ -13,10 +13,11 @@ class App:
         self.notebook_main = ttk.Notebook(self.root)
 
         self.frames = {}
-        self.labels = {}
+        self.labels = {'estoque':[], 'vendas':[]}
         self.entrys = {'estoque':{}, 'vendas':{}}
         self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
+        self.combos = {}
 
         self.frames['estoque'] = {'main': tk.Frame(self.notebook_main)}
         self.frames['estoque']['main'].pack(anchor='w', pady=5, padx=5)
@@ -29,7 +30,6 @@ class App:
 
         labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
-        self.labels['estoque'] = []
         for i, text in enumerate(labels_texts):
             label = tk.Label(self.frames['estoque']['produto'], text=text, width=labels_width, anchor='e')
             label.grid(row=i, column=0, pady=2)
@@ -80,11 +80,20 @@ class App:
         self.frames['vendas'] = {'main': tk.Frame(self.notebook_main)}
         self.frames['vendas']['main'].pack()
         self.frames['vendas']['dados'] = tk.Frame(self.frames['vendas']['main'])
-        self.frames['vendas']['dados'].pack()
+        self.frames['vendas']['dados'].pack(anchor='w')
 
-        self.labels['vendas'] = []
-        self.labels['vendas'].append(tk.Label(self.frames['vendas']['dados'], text='Arquivo de vendas:'))
+        self.labels['vendas'].append(tk.Label(self.frames['vendas']['dados'], text='Data:'))
         self.labels['vendas'][-1].pack(side=tk.LEFT)
+
+        self.combos['dia'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=6)
+        self.combos['dia'].pack(side=tk.LEFT, padx=2)
+        self.combos['mes'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=10)
+        self.combos['mes'].pack(side=tk.LEFT, padx=2)
+        self.combos['ano'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=6)
+        self.combos['ano'].pack(side=tk.LEFT, padx=2)
+
+        ttk.Separator(self.frames['vendas']['dados'], orient='vertical').pack(side=tk.LEFT, fill='y', padx=10)
+
         self.labels['vendas'].append(tk.Label(self.frames['vendas']['dados'], text='Pesquisar:'))
         self.labels['vendas'][-1].pack(side=tk.LEFT)
 
@@ -106,7 +115,10 @@ class App:
         for key, (text, width) in columns.items():
             self.trees['vendas'].column(key, width=width)
             self.trees['vendas'].heading(key, text=text)
-        self.trees['vendas'].pack()
+        self.trees['vendas'].pack(anchor='w')
+
+        self.buttons['vendas']['relatorio'] = tk.Button(self.frames['vendas']['main'], text='Relatório')
+        self.buttons['vendas']['relatorio'].pack(anchor='w')
 
         self.notebook_main.add(self.frames['estoque']['main'], text='Estoque')
         self.notebook_main.add(self.frames['vendas']['main'], text='Vendas')
