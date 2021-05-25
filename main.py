@@ -14,6 +14,7 @@ class App:
         self.notebook_main = ttk.Notebook(self.root)
 
         self.frames = {}
+        self.vars = {}
         self.entrys = {'estoque':{}, 'vendas':{}}
         self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
@@ -32,23 +33,32 @@ class App:
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
         for i, text in enumerate(labels_texts):
             tk.Label(self.frames['estoque']['produto'], 
-                text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2)
+                text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w')
 
         entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']
         for i, key in enumerate(entrys_keys):
             entry = tk.Entry(self.frames['estoque']['produto'])
-            entry.grid(row=i, column=1, padx=[0, 10])
+            entry.grid(row=i, column=1, padx=[0, 10], sticky='ew')
             self.entrys['estoque'][key] = entry
 
         button_width = 10
+        self.vars['button cadastrar'] = tk.StringVar()
+        self.vars['button cadastrar'].set('Cadastrar')
+        self.vars['button excluir'] = tk.StringVar()
+        self.vars['button excluir'].set('Excluir')
         self.buttons['estoque']['cadastrar'] = tk.Button(self.frames['estoque']['produto'], 
-            text='Cadastrar', width=button_width, command=self.register)
+            textvariable=self.vars['button cadastrar'], width=button_width, command=self.register)
         self.buttons['estoque']['cadastrar'].grid(row=6, column=0, pady=10)
         self.buttons['estoque']['excluir'] = tk.Button(self.frames['estoque']['produto'], 
-            text='Excluir', width=button_width, command=self.delete)
+            textvariable=self.vars['button excluir'], width=button_width, command=self.delete)
         self.buttons['estoque']['excluir'].grid(row=6, column=1, pady=10)
-        self.buttons['estoque']['filtrar'] = tk.Button(self.frames['estoque']['pesquisar'], text='Filtrar', width=button_width)
+        self.buttons['estoque']['filtrar'] = tk.Button(self.frames['estoque']['pesquisar'], 
+            text='Filtrar', width=button_width, command=self.set_filter)
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
+
+        self.vars['data cad/mod'] = tk.StringVar()
+        tk.Label(self.frames['estoque']['produto'], width=35, height=2, 
+            textvariable=self.vars['data cad/mod'], justify=tk.LEFT, anchor='w').grid(row=7, column=0, columnspan=2, sticky='w')
 
         tk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
 
@@ -68,6 +78,8 @@ class App:
         for key, (text, width) in columns.items():
             self.trees['estoque'].column(key, width=width)
             self.trees['estoque'].heading(key, text=text)
+        self.trees['estoque'].bind('<Double-1>', lambda x: self.update('show_produto'))
+        self.trees['estoque'].bind('<ButtonRelease-1>', lambda x: self.update('show_detalhes'))
         self.trees['estoque'].pack()
 
         self.frames['estoque']['relatório'] = tk.Frame(self.frames['estoque']['dados'])
@@ -126,13 +138,21 @@ class App:
         self.update('estoque')
     
     def delete(self):
-        try: 
-            item = self.trees['estoque'].item(self.trees['estoque'].focus())
-            id_item = int(item['text'])
-        except ValueError: messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
-        else: 
-            if messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][0])):
-                data.storage.delete(id_item)
+        if self.vars['button excluir'].get() == 'Excluir':
+            try: 
+                item = self.trees['estoque'].item(self.trees['estoque'].focus())
+                id_item = int(item['text'])
+            except ValueError: messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
+            else: 
+                if messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][0])):
+                    data.storage.delete(id_item)
+        
+        elif self.vars['button excluir'].get() == 'Cancelar':
+            for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+            self.vars['button cadastrar'].set('Cadastrar')
+            self.vars['button excluir'].set('Excluir')
+            self.vars['produto selecionado'] = None
+
         self.update('estoque')
     
     def find(self, event):
@@ -152,20 +172,75 @@ class App:
             descricao = str(self.entrys['estoque']['descricao'].get())
         except ValueError: messagebox.showwarning('Erro ao cadastrar produto!', 'Preencha os campos corretamente.')
         else:
-            try: data.storage.add(id_item, nome, p_venda, p_custo, quantidade, descricao)
-            except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
-            else:
-                for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
-                self.update('estoque')
+            if self.vars['button cadastrar'].get() == 'Cadastrar':
+                try: data.storage.add(id_item, nome, p_venda, p_custo, quantidade, descricao)
+                except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
+                else:
+                    for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+        
+            elif self.vars['button cadastrar'].get() == 'Modificar':
+                try: data.storage.modify(self.vars['produto selecionado'], {'id':id_item, 'nome':nome, 
+                        'p_venda':p_venda, 'p_custo':p_custo, 'quantidade':quantidade, 'descricao':descricao})
+                except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
+                else:
+                    for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+                    self.vars['button cadastrar'].set('Cadastrar')
+                    self.vars['button excluir'].set('Excluir')
+                    self.vars['produto selecionado'] = None
+            
+            self.update('estoque')
+    
+    def set_filter(self):
+        toplevel = tk.Toplevel()
+        toplevel.title('Selecionar filtros')
+        toplevel.focus_force()
+
+        tk.Label(toplevel, text='Aplicar filtros:', width=50, anchor='w').pack()
+
+        labels = ['Código', 'Nome', 'Preço de venda', 
+            'Preço de custo', 'Quantidade', 'Descrição', 'Data de cadastro', 'Data de última modficação']
+        ck_vars = []
+        for label in labels:
+            var = tk.BooleanVar()
+            var.set(True)
+            tk.Checkbutton(toplevel, text=label, var=var).pack()
+            ck_vars.append(var)
+        
+        toplevel.mainloop()
     
     def update(self, key):
-        if key == 'estoque':
+        if key == 'estoque': # atualizar a aba de estoque em geral
             for i in self.trees[key].get_children(): self.trees[key].delete(i)
             for item in data.storage.get_dict().values():
                 self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
             self.svar_ncadastros.set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
+
+        elif key == 'show_produto': # mostrar produto
+            try: 
+                item = self.trees['estoque'].item(self.trees['estoque'].focus())
+                id_item = int(item['text'])
+            except ValueError: pass
+            else:
+                self.entrys['estoque']['id'].delete(0, tk.END)
+                self.entrys['estoque']['id'].insert(0, item['text'])
+                self.vars['produto selecionado'] = item['text']
+                for i, entry in enumerate(['nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']):
+                    self.entrys['estoque'][entry].delete(0, tk.END)
+                    self.entrys['estoque'][entry].insert(0, item['values'][i])
+                self.vars['button cadastrar'].set('Modificar')
+                self.vars['button excluir'].set('Cancelar')
+        
+        elif key == 'show_detalhes':
+            item = self.trees['estoque'].item(self.trees['estoque'].focus())
+            try: 
+                id_item = int(item['text'])
+            except ValueError: pass
+            else:
+                self.vars['data cad/mod'].set('Data de cadastro: {}\nData de última modificação: {}'.format(
+                    data.storage.get_value(id_item, 'data_cadastro'), data.storage.get_value(id_item, 'data_mod')))
+
         self.root.update()
 
 if __name__ == '__main__':

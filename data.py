@@ -75,6 +75,17 @@ class Storage:
         self.dataframe = self.dataframe.drop(index=self.get_df_index(id_item))
     
     def find(self, value, column_filter=None):
+        '''
+        Encontrar item no dataframe.
+
+        Args:
+            value: valor que deseja ser encontrado.
+            column_filter: lista indicando em quais columas do dataframe deve-se procurar o valor (list[bool, bool, ...]).
+        
+        Returns:
+            lista dos itens encontrados.
+            formato -> list[dict{}]
+        '''
         items = []
         if column_filter == None: column_filter = [True]*len(self.dataframe.columns)
         for i, item in self.get_dict().items():
@@ -118,6 +129,16 @@ class Storage:
         '''
         return len(self.dataframe)
     
+    def get_value(self, id_item, column):
+        '''
+        Acessar valor no dataframe.
+
+        Args:
+            id_item: O id do produto.
+            column: Nome da coluna.
+        '''
+        return self.dataframe.at[self.get_df_index(id_item), column]
+    
     @autosave
     def modify(self, id_item, modifications):
         '''
@@ -128,11 +149,18 @@ class Storage:
             modifications: um dicionário em que a 'key' indica a coluna do item e o 'value' o novo valor.
                 |-> Dict{nome da coluna: novo valor}
         '''
+        mod = False
+        df_id = self.get_df_index(id_item)
         for key, value in modifications.items(): 
-            if key in ('id', 'nome') and value in self.dataframe[key].tolist():
-                raise DataError(f'Produto com "{key}" = "{value}" já está cadastrado.')
-            else:
-                self.dataframe.at[id_item, key] = value
+            if value != self.dataframe.at[df_id, key]:
+                if key in ('id', 'nome') and value in self.dataframe[key].tolist():
+                    raise DataError(f'Produto com "{key}" = "{value}" já está cadastrado.')
+                elif key in ('data_cadastro', 'data_mod'):
+                    raise DataError(f'O valor de "{key}" não pode ser alterado!')
+                else: 
+                    self.dataframe.at[df_id, key] = value
+                    mod = True
+        if mod: self.dataframe.at[df_id, 'data_mod'] = date.today().strftime('%d/%m/%Y')
     
     def save(self):
         '''
