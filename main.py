@@ -14,8 +14,6 @@ class App:
         self.notebook_main = ttk.Notebook(self.root)
 
         self.frames = {}
-        self.labels = {'estoque':[], 'vendas':[]}
-        self.string_var = {}
         self.entrys = {'estoque':{}, 'vendas':{}}
         self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
@@ -33,9 +31,8 @@ class App:
         labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
         for i, text in enumerate(labels_texts):
-            label = tk.Label(self.frames['estoque']['produto'], text=text, width=labels_width, anchor='e')
-            label.grid(row=i, column=0, pady=2)
-            self.labels['estoque'].append(label)
+            tk.Label(self.frames['estoque']['produto'], 
+                text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2)
 
         entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']
         for i, key in enumerate(entrys_keys):
@@ -53,11 +50,10 @@ class App:
         self.buttons['estoque']['filtrar'] = tk.Button(self.frames['estoque']['pesquisar'], text='Filtrar', width=button_width)
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
 
-        label = tk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:')
-        label.grid(row=0, column=0)
-        self.labels['estoque'].append(label)
+        tk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
 
         self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70)
+        self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', self.find)
         self.entrys['estoque']['pesquisar'].grid(row=0, column=1)
 
         columns = {
@@ -77,9 +73,8 @@ class App:
         self.frames['estoque']['relatório'] = tk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['relatório'].pack(pady=5, padx=5, fill='x')
         self.svar_ncadastros = tk.StringVar()
-        self.labels['estoque'].append(tk.Label(self.frames['estoque']['relatório'], 
-            text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.svar_ncadastros))
-        self.labels['estoque'][-1].pack(side=tk.LEFT)
+        tk.Label(self.frames['estoque']['relatório'], 
+            text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.svar_ncadastros).pack(side=tk.LEFT)
         self.buttons['estoque']['relatório'] = tk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
 
@@ -88,8 +83,7 @@ class App:
         self.frames['vendas']['dados'] = tk.Frame(self.frames['vendas']['main'])
         self.frames['vendas']['dados'].pack(anchor='w')
 
-        self.labels['vendas'].append(tk.Label(self.frames['vendas']['dados'], text='Data:'))
-        self.labels['vendas'][-1].pack(side=tk.LEFT)
+        tk.Label(self.frames['vendas']['dados'], text='Data:').pack(side=tk.LEFT)
 
         self.combos['dia'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=6)
         self.combos['dia'].pack(side=tk.LEFT, padx=2)
@@ -100,8 +94,7 @@ class App:
 
         ttk.Separator(self.frames['vendas']['dados'], orient='vertical').pack(side=tk.LEFT, fill='y', padx=10)
 
-        self.labels['vendas'].append(tk.Label(self.frames['vendas']['dados'], text='Pesquisar:'))
-        self.labels['vendas'][-1].pack(side=tk.LEFT)
+        tk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT)
 
         self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'])
         self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT)
@@ -142,6 +135,12 @@ class App:
                 data.storage.delete(id_item)
         self.update('estoque')
     
+    def find(self, event):
+        for i in self.trees['estoque'].get_children(): self.trees['estoque'].delete(i)
+        for item in data.storage.find(self.entrys['estoque']['pesquisar'].get()):
+            self.trees['estoque'].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
+        self.root.update()
+    
     def register(self):
         try:
             id_item = int(self.entrys['estoque']['id'].get())
@@ -162,11 +161,12 @@ class App:
     def update(self, key):
         if key == 'estoque':
             for i in self.trees[key].get_children(): self.trees[key].delete(i)
-            for i, item in data.storage.get_dict().items():
-                self.trees[key].insert('', i, text=item['id'], values=list(item.values())[1:])
+            for item in data.storage.get_dict().values():
+                self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
             self.svar_ncadastros.set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
+        self.root.update()
 
 if __name__ == '__main__':
     data.init()

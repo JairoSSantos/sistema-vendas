@@ -74,6 +74,18 @@ class Storage:
         '''
         self.dataframe = self.dataframe.drop(index=self.get_df_index(id_item))
     
+    def find(self, value, column_filter=None):
+        items = []
+        if column_filter == None: column_filter = [True]*len(self.dataframe.columns)
+        for i, item in self.get_dict().items():
+            if not item in items:
+                for column, verify in zip(self.dataframe.columns, column_filter):
+                    if verify and str(value) in str(self.dataframe.at[i, column]):
+                        items.append(item)
+                        break
+        return items
+
+    
     def generate_id(self):
         '''
         Gerar novo código.
