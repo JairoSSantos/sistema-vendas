@@ -19,7 +19,7 @@ class App:
         self.notebook_main = ttk.Notebook(self.root)
 
         self.frames = {}
-        self.vars = {}
+        self.vars = {'filtros':{'estoque':None, 'vendas':None}}
         self.entrys = {'estoque':{}, 'vendas':{}}
         self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
@@ -58,7 +58,7 @@ class App:
             textvariable=self.vars['button excluir'], width=button_width, command=self.delete)
         self.buttons['estoque']['excluir'].grid(row=6, column=1, pady=10)
         self.buttons['estoque']['filtrar'] = tk.Button(self.frames['estoque']['pesquisar'], 
-            text='Filtrar', width=button_width, command=self.set_filter)
+            text='Filtrar', width=button_width, command= lambda a=0: self.set_filter('estoque'))
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
 
         self.vars['data cad/mod'] = tk.StringVar()
@@ -68,23 +68,24 @@ class App:
         tk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
 
         self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70)
-        self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', self.find)
+        self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('estoque'))
         self.entrys['estoque']['pesquisar'].grid(row=0, column=1)
 
-        columns = {
-            '#0':['Código', 80],
-            'nome':['Nome', 250],
-            'p_venda':['Preço de venda', 150],
-            'p_custo':['Preço de custo', 150],
-            'quantidade':['Quantidade', 100]
-        }
+        columns = [
+            ['Código', 80],
+            ['Nome', 250],
+            ['Preço de venda', 150],
+            ['Preço de custo', 150],
+            ['Quantidade', 100]
+        ]
 
-        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['dados'], columns=list(columns.keys())[1:])
-        for key, (text, width) in columns.items():
+        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns[1:])))
+        for i, (key, width) in enumerate(columns):
+            if not i: key = '#0'
             self.trees['estoque'].column(key, width=width)
-            self.trees['estoque'].heading(key, text=text)
-        self.trees['estoque'].bind('<Double-1>', lambda x: self.update('show_produto'))
-        self.trees['estoque'].bind('<<TreeviewSelect>>', lambda x: self.update('show_detalhes'))
+            self.trees['estoque'].heading(key, text=key if i else columns[0][0])
+        self.trees['estoque'].bind('<Double-1>', lambda event: self.update('show_produto'))
+        self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
         self.trees['estoque'].pack()
 
         self.frames['estoque']['relatório'] = tk.Frame(self.frames['estoque']['dados'])
@@ -114,24 +115,27 @@ class App:
         tk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT)
 
         self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'])
+        self.entrys['vendas']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('vendas'))
         self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT)
 
-        self.buttons['vendas']['filtrar'] = tk.Button(self.frames['vendas']['dados'], text='Filtrar')
+        self.buttons['vendas']['filtrar'] = tk.Button(self.frames['vendas']['dados'], 
+            text='Filtrar', command=lambda a=0: self.set_filter('vendas'))
         self.buttons['vendas']['filtrar'].pack(side=tk.LEFT)
 
-        columns = {
-            '#0':['Id', 80],
-            'horario':['Horário da venda', 150],
-            'produtos':['Produtos', 200],
-            'total':['Total', 100],
-            'pago':['Valor pago', 100],
-            'formato':['Formato de pagamento', 150]
-        }
+        columns = [
+            ['Id', 80],
+            ['Horário da venda', 150],
+            ['Produtos', 200],
+            ['Total', 100],
+            ['Valor pago', 100],
+            ['Formato de pagamento', 150]
+        ]
 
-        self.trees['vendas'] = ttk.Treeview(self.frames['vendas']['main'], columns=list(columns.keys())[1:])
-        for key, (text, width) in columns.items():
+        self.trees['vendas'] = ttk.Treeview(self.frames['vendas']['main'], columns=list(map(lambda a: a[0], columns[1:])))
+        for i, (key, width) in enumerate(columns):
+            if not i: key = '#0'
             self.trees['vendas'].column(key, width=width)
-            self.trees['vendas'].heading(key, text=text)
+            self.trees['vendas'].heading(key, text=key if i else columns[0][0])
         self.trees['vendas'].pack(anchor='w')
 
         self.buttons['vendas']['relatorio'] = tk.Button(self.frames['vendas']['main'], text='Relatório')
@@ -162,10 +166,11 @@ class App:
 
         self.update('estoque')
     
-    def find(self, event):
-        for i in self.trees['estoque'].get_children(): self.trees['estoque'].delete(i)
-        for item in data.storage.find(self.entrys['estoque']['pesquisar'].get()):
-            self.trees['estoque'].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
+    def find(self, key):
+        for i in self.trees[key].get_children(): self.trees[key].delete(i)
+        item = data.storage if key == 'estoque' else data.sales
+        for item in item.find(self.entrys[key]['pesquisar'].get(), self.vars['filtros'][key]):
+            self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
         self.root.update()
     
     def register(self):
@@ -197,21 +202,36 @@ class App:
             
             self.update('estoque')
     
-    def set_filter(self):
+    def set_filter(self, key):
         toplevel = tk.Toplevel()
         toplevel.title('Selecionar filtros')
         toplevel.focus_force()
 
         tk.Label(toplevel, text='Aplicar filtros:', width=50, anchor='w').pack()
 
-        labels = ['Código', 'Nome', 'Preço de venda', 
-            'Preço de custo', 'Quantidade', 'Descrição', 'Data de cadastro', 'Data de última modficação']
-        ck_vars = []
-        for label in labels:
-            var = tk.BooleanVar()
-            var.set(True)
-            tk.Checkbutton(toplevel, text=label, var=var).pack()
-            ck_vars.append(var)
+        if key == 'estoque':
+            labels = ['Código', 'Nome', 'Preço de venda', 
+                'Preço de custo', 'Quantidade', 'Descrição', 'Data de cadastro', 'Data de última modficação']
+            ck_vars = []
+            for label in labels:
+                var = tk.BooleanVar()
+                var.set(True)
+                tk.Checkbutton(toplevel, text=label, var=var).pack()
+                ck_vars.append(var)
+        
+        elif key == 'vendas':
+            labels = ['Id', 'Horário de venda', 'Produtos', 
+                'Total', 'Valor pago', 'Formato', 'Modificações']
+            ck_vars = []
+            for label in labels:
+                var = tk.BooleanVar()
+                var.set(True)
+                tk.Checkbutton(toplevel, text=label, var=var).pack()
+                ck_vars.append(var)
+        
+        def save(): self.vars['filtros'][key] = [v.get() for v in ck_vars]
+        tk.Button(toplevel, text='Salvar', command=save).pack()
+        tk.Button(toplevel, text='Calcelar', command= lambda a=0: toplevel.destroy()).pack()
         
         toplevel.mainloop()
     

@@ -95,7 +95,6 @@ class Storage:
                         items.append(item)
                         break
         return items
-
     
     def generate_id(self):
         '''
@@ -218,6 +217,28 @@ class Sales:
             'formato':formato,
             'mod':mod
         }, ignore_index=True)
+    
+    def find(self, value, column_filter=None):
+        '''
+        Encontrar item no dataframe.
+
+        Args:
+            value: valor que deseja ser encontrado.
+            column_filter: lista indicando em quais columas do dataframe deve-se procurar o valor (list[bool, bool, ...]).
+        
+        Returns:
+            lista dos itens encontrados.
+            formato -> list[dict{}]
+        '''
+        items = []
+        if column_filter == None: column_filter = [True]*len(self.dataframe.columns)
+        for i, item in self.get_dict().items():
+            if not item in items:
+                for column, verify in zip(self.dataframe.columns, column_filter):
+                    if verify and str(value) in str(self.dataframe.at[i, column]):
+                        items.append(item)
+                        break
+        return items
     
     def get_dict(self):
         '''
