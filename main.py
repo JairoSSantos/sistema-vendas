@@ -3,6 +3,11 @@ from tkinter import ttk
 from tkinter import messagebox
 import data
 
+MONTH_NAME = dict(zip(range(1, 13), ['Janeiro', 'Fevereiro', 'Março', 
+    'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dasembro']))
+
+MONTH_NUMBER = {name:'0'*(2-len(str(num))) + str(num) for num, name in MONTH_NAME.items()}
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -79,14 +84,14 @@ class App:
             self.trees['estoque'].column(key, width=width)
             self.trees['estoque'].heading(key, text=text)
         self.trees['estoque'].bind('<Double-1>', lambda x: self.update('show_produto'))
-        self.trees['estoque'].bind('<ButtonRelease-1>', lambda x: self.update('show_detalhes'))
+        self.trees['estoque'].bind('<<TreeviewSelect>>', lambda x: self.update('show_detalhes'))
         self.trees['estoque'].pack()
 
         self.frames['estoque']['relatório'] = tk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['relatório'].pack(pady=5, padx=5, fill='x')
-        self.svar_ncadastros = tk.StringVar()
+        self.vars['n cadastros'] = tk.StringVar()
         tk.Label(self.frames['estoque']['relatório'], 
-            text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.svar_ncadastros).pack(side=tk.LEFT)
+            text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.vars['n cadastros']).pack(side=tk.LEFT)
         self.buttons['estoque']['relatório'] = tk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
 
@@ -117,6 +122,7 @@ class App:
         columns = {
             '#0':['Id', 80],
             'horario':['Horário da venda', 150],
+            'produtos':['Produtos', 200],
             'total':['Total', 100],
             'pago':['Valor pago', 100],
             'formato':['Formato de pagamento', 150]
@@ -136,6 +142,7 @@ class App:
         self.notebook_main.grid(row=0, column=0)
 
         self.update('estoque')
+        self.update('vendas')
     
     def delete(self):
         if self.vars['button excluir'].get() == 'Excluir':
@@ -213,7 +220,7 @@ class App:
             for i in self.trees[key].get_children(): self.trees[key].delete(i)
             for item in data.storage.get_dict().values():
                 self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
-            self.svar_ncadastros.set(f'Produtos cadastrados: {data.storage.get_size()}')
+            self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
 
@@ -240,6 +247,25 @@ class App:
             else:
                 self.vars['data cad/mod'].set('Data de cadastro: {}\nData de última modificação: {}'.format(
                     data.storage.get_value(id_item, 'data_cadastro'), data.storage.get_value(id_item, 'data_mod')))
+        
+        elif key == 'vendas':
+            self.update('vendas_arquivo')
+            for i in self.trees[key].get_children(): self.trees[key].delete(i)
+            for item in data.sales.get_dict().values():
+                self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
+        
+        elif key == 'vendas_arquivo':
+            years, months = [], []
+            for year, month in map(lambda a: a.rstrip('.csv').split('-'), data.sales.get_files()):
+                years.append(year)
+                months.append(MONTH_NAME[int(month)])
+            self.combos['ano']['values'] = years
+            self.combos['ano'].current(0)
+            self.combos['mes']['values'] = months
+            self.combos['mes'].current(0)
+            self.combos['dia'].current(0)
+
+            data.sales.set_file('-'.join([self.combos['ano'].get(), MONTH_NUMBER[self.combos['mes'].get()]+'.csv']))
 
         self.root.update()
 

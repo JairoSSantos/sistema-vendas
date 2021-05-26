@@ -196,6 +196,17 @@ class Sales:
     
     @autosave
     def add(self, produtos, total, pago=0, formato='dinheiro', mod=None):
+        '''
+        Adicionar item à venda.
+
+        Args:
+            produtos: produtos que foram vendidos (formato: [[id do produto, quantidade], [id do produto, quantidade], ...]).
+            total: valor total da venda.
+            pago: valor pago pelo cliente.
+            formato: formato de venda (dinheiro, cartão de crédito, cartão de débito, ...).
+            mod: alguma alteração no valor final (desconto, acréscimo, ...)
+                |-> formato: +10%, -15%, -50%, ...
+        '''
         id_item = 0
         while id_item in self.dataframe['id'].tolist(): id_item += 1
         self.dataframe = self.dataframe.append({
@@ -208,22 +219,58 @@ class Sales:
             'mod':mod
         }, ignore_index=True)
     
+    def get_dict(self):
+        '''
+        Pegar dataframe como dicionário.
+        returns:
+            dicionário com os dados do dataframe.
+        '''
+        return self.dataframe.to_dict('index')
+    
+    def get_files(self):
+        '''
+        Pegar arquivos salvos.
+
+        Returns:
+            lista dos arquivos de vendas.
+        '''
+        return os.listdir(self.path)
+    
     def save(self):
         '''
         Salvar os dados.
         '''
         self.dataframe.to_csv(self.filename, index=False)
     
+    def set_file(self, name):
+        '''
+        Definir arquivo.
+
+        Args:
+            name: nome do arquivo (formato: "ano-mês.csv").
+        '''
+        if not name in self.get_files():
+            raise DataError(f'Arquivo "{name}" não existe!')
+        else: self.filename = os.path.join(self.path, name)
+    
+    def set_current_file(self):
+        '''
+        Selecionar o arquivo de vendas atual.
+        '''
+        name = date.today().strftime('%Y-%m') + '.csv'
+        self.filename = os.path.join(self.path, name)
+        if not name in self.get_files():
+            self.dataframe = pd.DataFrame(columns=['id', 'horario', 'produtos', 'total', 'pago', 'formato', 'mod'])
+            self.save()
+    
     def update(self):
         '''
         Atualizar o dataframe.
         '''
-        self.filename = os.path.join(self.path, date.today().strftime('%Y-%m') + '.csv')
+        if not self.filename: self.set_current_file()
         try: self.dataframe = pd.read_csv(self.filename)
         except FileNotFoundError:
-            self.dataframe = pd.DataFrame(columns=['id', 'horario', 'produtos', 'total', 'pago', 'formato', 'mod'])
-            self.save()
-            self.update()
+            raise DataError('Arquivo não encontrado!')
 
 def init():
     '''
