@@ -109,8 +109,14 @@ class Storage:
     def get_df_index(self, id_item):
         '''
         Função para pegar o índice do item no dataframe.
+
+        Args:
+            id_item: id do ítem.
         '''
-        return self.dataframe.loc[self.dataframe['id'] == id_item].index.item()
+        if not id_item in self.dataframe['id'].tolist():
+            raise DataError('Produto não cadastrado!')
+        else:
+            return self.dataframe.loc[self.dataframe['id'] == id_item].index.item()
     
     def get_dict(self): 
         '''
@@ -128,15 +134,15 @@ class Storage:
         '''
         return len(self.dataframe)
     
-    def get_value(self, id_item, column):
+    def get_value(self, id_item, *columns):
         '''
         Acessar valor no dataframe.
 
         Args:
             id_item: O id do produto.
-            column: Nome da coluna.
+            columns: Nome das colunas.
         '''
-        return self.dataframe.at[self.get_df_index(id_item), column]
+        return [self.dataframe.at[self.get_df_index(id_item), column] for column in columns]
     
     @autosave
     def modify(self, id_item, modifications):
