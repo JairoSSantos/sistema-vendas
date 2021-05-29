@@ -3,6 +3,58 @@ from tkinter import ttk
 from tkinter import messagebox
 import data
 
+class SalePay:
+    def __init__(self):
+        self.items = []
+        self.date = None
+        self.index = None
+
+    def add(self, *args): 
+        self.items.append(args)
+
+    def get_total(self):
+        return sum([item[4] for item in self.items])
+    
+    def new(self, index=0, date='00/00/0000'):
+        self.items.clear()
+        self.date = date
+        self.index = index
+
+class ConfirmApp:
+    def __init__(self, root, sale):
+        self.root = root
+        tk.Label(self.root, text=f'ID: {sale.index}  Data: {sale.date}').pack()
+        tk.Label(self.root, text=f'Total: {sale.get_total():.2f} R$').pack()
+
+        self.val_recebido = tk.StringVar()
+        self.val_recebido.set('Valor recebido: 00,00 R$')
+        tk.Label(self.root, textvariable=self.val_recebido).pack()
+
+        self.troco = tk.StringVar()
+        self.troco.set('Troco: 00,00 R$')
+        tk.Label(self.root, textvariable=self.troco).pack()
+
+        buttons_frame = tk.Frame(self.root)
+        buttons_frame.pack()
+        tk.Button(buttons_frame, text='Confirmar').pack(side=tk.LEFT)
+        tk.Button(buttons_frame, text='Cancelar').pack(side=tk.LEFT)
+        tk.Button(buttons_frame, text='Desconto').pack(side=tk.LEFT)
+        tk.Button(buttons_frame, text='Calculadora').pack(side=tk.LEFT)
+        self.root.bind('<KeyRelease>', self.payvalue)
+        self.root.focus_force()
+        self.root.mainloop()
+    
+    def payvalue(self, event):
+        try: value = int(event.char)
+        except ValueError: pass
+        else: 
+            dec = [int(char) for char in self.val_recebido.get().strip('Valorrecebido:R$ ') if not char in [',', '0']]
+            dec.append(value)
+            while len(dec) < 3: dec.insert(0, 0)
+            dec.insert(-2, ',')
+            dec = ''.join(map(str, dec))
+            self.val_recebido.set(f'Valor recebido: {dec} R$')
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -30,6 +82,7 @@ class App:
             textvariable=self.vars['produto info'], justify=tk.LEFT).grid(row=1, column=0, sticky='w')
 
         columns = {
+            'Código':100,
             'Un':70,
             'Nome do produto':200,
             'Preço unitário':100,
@@ -52,36 +105,53 @@ class App:
         self.entrys['codigo'] = tk.Entry(self.frames['control'])
         self.entrys['codigo'].bind('<Return>', self.verify_code)
         self.entrys['codigo'].pack(side=tk.LEFT)
-        self.buttons['confirmar'] = tk.Button(self.frames['control'], text='Confirmar F2')
+        self.buttons['confirmar'] = tk.Button(self.frames['control'], text='Confirmar F2', command=self.confirm)
         self.buttons['confirmar'].pack(side=tk.LEFT)
-        self.buttons['cancelar'] = tk.Button(self.frames['control'], text='Cancelar ESC')
+        self.buttons['cancelar'] = tk.Button(self.frames['control'], text='Cancelar ESC', command=self.cancel)
         self.buttons['cancelar'].pack(side=tk.LEFT)
         self.buttons['calculadora'] = tk.Button(self.frames['control'], text='Calculadora F3')
         self.buttons['calculadora'].pack(side=tk.LEFT)
 
         self.root.bind('<F2>', self.confirm)
         self.root.bind('<Escape>', self.cancel)
-    
-    def cancel(self, event):
-        for i in self.tree.get_children(): self.tree.delete(i)
 
-    def confirm(self, event): pass
+        self.sale = SalePay()
+    
+    def cancel(self, event=None):
+        self.sale.new()
+        self.update()
+
+    def confirm(self, event=None):
+        toplevel = ConfirmApp(tk.Toplevel(self.root), self.sale)
 
     def delete(self, event):
-        item = self.tree.item(self.tree.focus())['text']
-        if item == '': messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
-        elif messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][0])): self.tree.delete(int(item))
+        item = self.tree.item(self.tree.focus())
+        try: id_item = int(item['text'])
+        except ValueError: messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
+        else:
+            if messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][1])):
+                self.sale.items.pop(id_item)
+        finally: self.update()
+    
+    def update(self):
+        for i in self.tree.get_children(): self.tree.delete(i)
+        for i, item in enumerate(self.sale.items):
+            self.tree.insert('', i, text=i, values=item)
+        total = self.sale.get_total()
+        self.vars['total'].set(f'Total: {total:.2f} R$')
+        self.root.update()
     
     def verify_code(self, event):
         value = self.entrys['codigo'].get()
-        try:quant, value = map(int, value.split('x')) if 'x' in value else [1, int(value)]
+        try: un, value = map(int, value.split('x')) if 'x' in value else [1, int(value)]
         except ValueError: messagebox.showwarning('Formáto inválido.', 'Erro no formato do código.\nDigite corretamente.')
         else:
             try: nome, p_venda = data.storage.get_value(value, 'nome', 'p_venda')
             except Exception as error: messagebox.showwarning('Erro no código.', error)
-            else: self.tree.insert('', 'end', text=len(self.tree.get_children()), values=[quant, nome, p_venda, p_venda*quant])
-        finally: self.entrys['codigo'].delete(0, tk.END)
-        self.root.update()
+            else: 
+                self.sale.add(value, un, nome, p_venda, p_venda*un)
+                self.vars['produto info'].set(f'{value} {un}  {nome}  {p_venda:.2f} R$')
+        finally: self.entrys['codigo'].delete(0, tk.END); self.update()
 
 if __name__ == '__main__':
     data.init()
