@@ -8,12 +8,24 @@ class SalePay:
         self.items = []
         self.date = None
         self.index = None
+        self.paid = None
 
     def add(self, *args): 
         self.items.append(args)
+    
+    def confirm(self, form): 
+        data.sales.add(
+            [[int(un), id_item] 
+                for id_item, un, name, p_venda, total in self.items], 
+            self.get_total(), self.paid, form, self.mods)
+    
+    def get_change(self):
+        return self.paid - self.get_total()
 
     def get_total(self):
         return sum([item[4] for item in self.items])
+    
+    def set_paid(self, value): self.paid = value
     
     def new(self, index=0, date='00/00/0000'):
         self.items.clear()
@@ -23,8 +35,9 @@ class SalePay:
 class ConfirmApp:
     def __init__(self, root, sale):
         self.root = root
-        tk.Label(self.root, text=f'ID: {sale.index}  Data: {sale.date}').pack()
-        tk.Label(self.root, text=f'Total: {sale.get_total():.2f} R$').pack()
+        self.sale = sale
+        tk.Label(self.root, text=f'ID: {self.sale.index}  Data: {self.sale.date}').pack()
+        tk.Label(self.root, text=f'Total: {self.sale.get_total():.2f} R$').pack()
 
         self.val_recebido = tk.StringVar()
         self.val_recebido.set('Valor recebido: 00,00 R$')
@@ -36,24 +49,39 @@ class ConfirmApp:
 
         buttons_frame = tk.Frame(self.root)
         buttons_frame.pack()
-        tk.Button(buttons_frame, text='Confirmar').pack(side=tk.LEFT)
-        tk.Button(buttons_frame, text='Cancelar').pack(side=tk.LEFT)
-        tk.Button(buttons_frame, text='Desconto').pack(side=tk.LEFT)
-        tk.Button(buttons_frame, text='Calculadora').pack(side=tk.LEFT)
+        tk.Button(buttons_frame, text='Confirmar F2', command=self.confirm).pack(side=tk.LEFT)
+        tk.Button(buttons_frame, text='Cancelar ESC', command=self.cancel).pack(side=tk.LEFT)
+        tk.Button(buttons_frame, text='Desconto F4', command=self.set_mod).pack(side=tk.LEFT)
+        tk.Button(buttons_frame, text='Calculadora F3').pack(side=tk.LEFT)
         self.root.bind('<KeyRelease>', self.payvalue)
+        self.root.bind('<F2>', self.confirm)
+        self.root.bind('<Escape>', self.cancel)
         self.root.focus_force()
         self.root.mainloop()
     
+    def cancel(self):
+        if messagebox.showwarning('Cancelar venda', 'Deseja iniciar nova venda?'):
+            self.sale.new()
+        self.root.destroy()
+
+    def confirm(self):
+        self.sale.confirm()
+        self.sale.new()
+        self.root.destroy()
+    
     def payvalue(self, event):
+        dec = [int(char) for char in self.val_recebido.get().lstrip('0') if char.isnumeric()]
         try: value = int(event.char)
-        except ValueError: pass
-        else: 
-            dec = [int(char) for char in self.val_recebido.get().strip('Valorrecebido:R$ ') if not char in [',', '0']]
-            dec.append(value)
+        except ValueError:
+            if event.keysym == 'BackSpace': del dec[-1]
+        else: dec.append(value)
+        finally:
             while len(dec) < 3: dec.insert(0, 0)
             dec.insert(-2, ',')
             dec = ''.join(map(str, dec))
+            val = float(dec.replace(',', '.'))
             self.val_recebido.set(f'Valor recebido: {dec} R$')
+            self.troco.set(f'Troco: {self.sale.get_change(val):.2f} R$'.replace('.', ','))
 
 class App:
     def __init__(self, root):
