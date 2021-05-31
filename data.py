@@ -246,6 +246,12 @@ class Sales:
                         break
         return items
     
+    def get_current_date(self):
+        '''
+        Pegar data atual.
+        '''
+        return datetime.now().strftime('%Y/%m/%d')
+    
     def get_dict(self):
         '''
         Pegar dataframe como dicionário.
@@ -262,6 +268,14 @@ class Sales:
             lista dos arquivos de vendas.
         '''
         return os.listdir(self.path)
+    
+    def get_next_id(self):
+        '''
+        Pegar id da próxima venda.
+        '''
+        id_item = 0
+        while id_item in self.dataframe['id'].tolist(): id_item += 1
+        return id_item
     
     def save(self):
         '''
