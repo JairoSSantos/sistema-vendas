@@ -266,7 +266,7 @@ class App:
             except ValueError: pass
             else:
                 self.vars['data cad/mod'].set('Data de cadastro: {}\nData de última modificação: {}'.format(
-                    data.storage.get_value(id_item, 'data_cadastro'), data.storage.get_value(id_item, 'data_mod')))
+                    data.storage.get_value(id_item, 'data_cadastro')[0], data.storage.get_value(id_item, 'data_mod')[0]))
         
         elif key == 'vendas':
             self.update('vendas_arquivo')

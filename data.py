@@ -65,6 +65,18 @@ class Storage:
         }, ignore_index=True)
     
     @autosave
+    def decrease(self, id_item, amount):
+        '''
+        Diminuir quantidade do item.
+
+        Args:
+            id_item: código do item.
+            amount: quantidade que sera removida.
+        '''
+        value = self.dataframe.at[self.get_df_index(id_item), 'quantidade']
+        self.dataframe.at[self.get_df_index(id_item), 'quantidade'] = value - amount
+    
+    @autosave
     def delete(self, id_item):
         '''
         Deletar produto.
@@ -143,6 +155,18 @@ class Storage:
             columns: Nome das colunas.
         '''
         return [self.dataframe.at[self.get_df_index(id_item), column] for column in columns]
+    
+    @autosave
+    def increase(self, id_item, amount):
+        '''
+        Aumentar quantidade do item.
+
+        Args:
+            id_item: código do item.
+            amount: quantidade que sera acrescentada.
+        '''
+        value = self.dataframe.at[self.get_df_index(id_item), 'quantidade']
+        self.dataframe.at[self.get_df_index(id_item), 'quantidade'] = value + amount
     
     @autosave
     def modify(self, id_item, modifications):

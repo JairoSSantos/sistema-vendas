@@ -27,10 +27,11 @@ class SalePay:
         '''
         Confirmar venda.
         '''
-        data.sales.add(
-            [[int(un), id_item] 
-                for id_item, un, name, p_venda, total in self.items], 
-            self.total, self.paid, form, self.mod)
+        stuff = [] 
+        for id_item, un, name, p_venda, total in self.items:
+            stuff.append([int(un), int(id_item)])
+            data.storage.decrease(int(id_item), int(un))
+        data.sales.add(stuff, self.total, self.paid, form, self.mod)
     
     def get_change(self):
         return self.paid - self.total
@@ -203,6 +204,7 @@ class App:
         ID = str(data.sales.get_next_id())
         while len(ID) < 5: ID = '0'+ID
         self.vars['arquivo info'].set(f'ID: {ID}  Data: {data.sales.get_current_date()}')
+        self.root.update()
 
     def delete(self, event):
         item = self.tree.item(self.tree.focus())
