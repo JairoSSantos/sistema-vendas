@@ -138,6 +138,14 @@ class Storage:
         '''
         return self.dataframe.to_dict('index')
     
+    def get_item(self, id_item):
+        '''
+        Pegar todos os valores de id_item.
+        returns:
+            lista com todos os valores.
+        '''
+        return self.dataframe.loc[self.get_df_index(id_item)].tolist()
+    
     def get_size(self):
         '''
         Pegar o tamanho do estoque.

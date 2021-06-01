@@ -12,10 +12,26 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title('Controle de dados')
-        # self.root.state('zoomed')
+        self.root.state('zoomed')
         # self.root.geometry(self.root.winfo_geometry())
 
+        '''self.style = ttk.Style()
+        self.style.theme_create('MyStyle', settings={
+            'TNotebook':{
+                'Configure':{
+                    'tabposition':'wn'
+                }
+            },
+            'TNotebook.Tab':{
+                'Configure':{
+                    'padding':[100, 10]
+                }
+            }
+        })
+        self.style.theme_use('MyStyle')'''
+
         ttk.Style().configure('TNotebook', tabposition='wn')
+        ttk.Style().configure('TNotebook.Tab', padding=[50, 10])
         self.notebook_main = ttk.Notebook(self.root)
 
         self.frames = {}
@@ -28,9 +44,11 @@ class App:
         self.frames['estoque'] = {'main': tk.Frame(self.notebook_main)}
         self.frames['estoque']['main'].pack(anchor='w', pady=5, padx=5)
         self.frames['estoque']['produto'] = tk.LabelFrame(self.frames['estoque']['main'], text='Produto', relief=tk.GROOVE)
-        self.frames['estoque']['produto'].pack(side=tk.LEFT, anchor='n', pady=5, padx=5)
+        self.frames['estoque']['produto'].grid(row=0, column=0, pady=5, padx=5)
         self.frames['estoque']['dados'] = tk.Frame(self.frames['estoque']['main'])
-        self.frames['estoque']['dados'].pack(side=tk.LEFT, anchor='n')
+        self.frames['estoque']['dados'].grid(row=0, column=1, pady=5, padx=5, rowspan=2)
+        self.frames['estoque']['detalhes'] = tk.LabelFrame(self.frames['estoque']['main'], text='Detalhes', relief=tk.GROOVE)
+        self.frames['estoque']['detalhes'].grid(row=1, column=0, pady=5, padx=5)
         self.frames['estoque']['pesquisar'] = tk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['pesquisar'].pack(pady=5, padx=5)
 
@@ -61,9 +79,9 @@ class App:
             text='Filtrar', width=button_width, command= lambda a=0: self.set_filter('estoque'))
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
 
-        self.vars['data cad/mod'] = tk.StringVar()
-        tk.Label(self.frames['estoque']['produto'], width=35, height=2, 
-            textvariable=self.vars['data cad/mod'], justify=tk.LEFT, anchor='w').grid(row=7, column=0, columnspan=2, sticky='w')
+        self.vars['detalhes'] = tk.StringVar()
+        tk.Label(self.frames['estoque']['detalhes'], width=35, height=12, 
+            textvariable=self.vars['detalhes'], justify=tk.LEFT, anchor='w').pack()
 
         tk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
 
@@ -79,7 +97,8 @@ class App:
             ['Quantidade', 100]
         ]
 
-        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns[1:])))
+        self.trees['estoque'] = ttk.Treeview(
+            self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns[1:])),height=30)
         for i, (key, width) in enumerate(columns):
             if not i: key = '#0'
             self.trees['estoque'].column(key, width=width)
@@ -265,8 +284,18 @@ class App:
                 id_item = int(item['text'])
             except ValueError: pass
             else:
-                self.vars['data cad/mod'].set('Data de cadastro: {}\nData de última modificação: {}'.format(
-                    data.storage.get_value(id_item, 'data_cadastro')[0], data.storage.get_value(id_item, 'data_mod')[0]))
+                codigo, nome, p_venda, p_custo, quant, desc, cad, mod = data.storage.get_item(id_item)
+                text = '\n'.join([
+                    f'Código: {codigo}',
+                    f'Nome: {nome}',
+                    f'Preço de venda: {p_venda}',
+                    f'Preço de custo: {p_custo}',
+                    f'Quantidade: {quant}',
+                    f'Descrição: {desc}',
+                    f'Data de cadastro: {cad}',
+                    f'Data de última modificação: {mod}'
+                ])
+                self.vars['detalhes'].set(text)
         
         elif key == 'vendas':
             self.update('vendas_arquivo')
