@@ -19,7 +19,9 @@ colors = [
 ]
 
 fonts = [
-    ('calibri', 18)
+    ('calibri', 18),
+    ('calibri', 14),
+    ('calibri', 12)
 ]
 
 class App:
@@ -50,6 +52,34 @@ class App:
             'TFrame':{
                 'configure':{'background':colors[3]}
             },
+            'TLabel':{
+                'configure':{
+                    'background':colors[3], 
+                    'foreground':colors[2],
+                    'font':fonts[2]
+                }
+            },
+            'TLabelframe':{
+                'configure':{
+                    'background':colors[3], 
+                    'relief':'solid', 
+                    'borderwidth':1, 
+                    'bordercolor':colors[2]
+                }
+            },
+            'TLabelframe.Label':{
+                'configure':{
+                    'background':colors[3], 
+                    'foreground':colors[2],
+                    'font':fonts[1]
+                }
+            },
+            'TEntry':{
+                'configure':{
+                    'fieldbackground':colors[4],
+                    'foreground':colors[2],
+                }
+            }
         })
         self.style.theme_use('MyTheme')
 
@@ -62,26 +92,26 @@ class App:
         self.trees = {}
         self.combos = {}
 
-        self.frames['estoque'] = {'main': tk.Frame(self.notebook_main)}
+        self.frames['estoque'] = {'main': ttk.Frame(self.notebook_main)}
         self.frames['estoque']['main'].pack(anchor='w', pady=5, padx=5)
-        self.frames['estoque']['produto'] = tk.LabelFrame(self.frames['estoque']['main'], text='Produto')
+        self.frames['estoque']['produto'] = ttk.LabelFrame(self.frames['estoque']['main'], text='Produto')
         self.frames['estoque']['produto'].grid(row=0, column=0, pady=5, padx=5)
-        self.frames['estoque']['dados'] = tk.Frame(self.frames['estoque']['main'])
+        self.frames['estoque']['dados'] = ttk.Frame(self.frames['estoque']['main'])
         self.frames['estoque']['dados'].grid(row=0, column=1, pady=5, padx=5, rowspan=2)
-        self.frames['estoque']['detalhes'] = tk.LabelFrame(self.frames['estoque']['main'], text='Detalhes')
+        self.frames['estoque']['detalhes'] = ttk.LabelFrame(self.frames['estoque']['main'], text='Detalhes')
         self.frames['estoque']['detalhes'].grid(row=1, column=0, pady=5, padx=5)
-        self.frames['estoque']['pesquisar'] = tk.Frame(self.frames['estoque']['dados'])
+        self.frames['estoque']['pesquisar'] = ttk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['pesquisar'].pack(pady=5, padx=5)
 
         labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
         for i, text in enumerate(labels_texts):
-            tk.Label(self.frames['estoque']['produto'], 
+            ttk.Label(self.frames['estoque']['produto'], 
                 text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w')
 
         entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']
         for i, key in enumerate(entrys_keys):
-            entry = tk.Entry(self.frames['estoque']['produto'])
+            entry = ttk.Entry(self.frames['estoque']['produto'])
             entry.grid(row=i, column=1, padx=[0, 10], sticky='ew')
             self.entrys['estoque'][key] = entry
 
@@ -101,10 +131,10 @@ class App:
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
 
         self.vars['detalhes'] = tk.StringVar()
-        tk.Label(self.frames['estoque']['detalhes'], width=35, height=12, 
+        ttk.Label(self.frames['estoque']['detalhes'], width=35, #height=12, 
             textvariable=self.vars['detalhes'], justify=tk.LEFT, anchor='w').pack()
 
-        tk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
+        ttk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
 
         self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70)
         self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('estoque'))
@@ -128,10 +158,10 @@ class App:
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
         self.trees['estoque'].pack()
 
-        self.frames['estoque']['relatório'] = tk.Frame(self.frames['estoque']['dados'])
+        self.frames['estoque']['relatório'] = ttk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['relatório'].pack(pady=5, padx=5, fill='x')
         self.vars['n cadastros'] = tk.StringVar()
-        tk.Label(self.frames['estoque']['relatório'], 
+        ttk.Label(self.frames['estoque']['relatório'], 
             text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.vars['n cadastros']).pack(side=tk.LEFT)
         self.buttons['estoque']['relatório'] = tk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
