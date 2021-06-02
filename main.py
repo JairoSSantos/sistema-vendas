@@ -8,6 +8,20 @@ MONTH_NAME = dict(zip(range(1, 13), ['Janeiro', 'Fevereiro', 'Março',
 
 MONTH_NUMBER = {name:'0'*(2-len(str(num))) + str(num) for num, name in MONTH_NAME.items()}
 
+colors = [
+    '#203864', # azul escuro -> notebook tab
+    '#4C5F8A', # azul cinza 1 -> notebook selected tab 
+    '#8497B0', # azul cinza 2 -> text
+    '#D6DCE5', # azul fraco -> background
+    '#EEF1F6', # branco cinza -> entrys
+    '#ADB9CA', # cinza -> button background
+    '#F8CBAD' # laranja fraco -> treeview
+]
+
+fonts = [
+    ('calibri', 18)
+]
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -15,23 +29,30 @@ class App:
         self.root.state('zoomed')
         # self.root.geometry(self.root.winfo_geometry())
 
-        '''self.style = ttk.Style()
-        self.style.theme_create('MyStyle', settings={
+        self.style = ttk.Style()
+        self.style.theme_create('MyTheme', parent='alt', settings={
             'TNotebook':{
-                'Configure':{
-                    'tabposition':'wn'
-                }
+                'configure':{'tabposition':'wn', 'background':colors[0]}
             },
             'TNotebook.Tab':{
-                'Configure':{
-                    'padding':[100, 10]
+                'configure':{
+                    'background':colors[0], 
+                    'padding':[5, 5], 
+                    'width':12, 
+                    'font':fonts[0], 
+                    'foreground':colors[4]
+                },
+                'map':{
+                    'background':[('selected', colors[1])],
+                    'expand':[('selected', [0]*4)]
                 }
-            }
+            },
+            'TFrame':{
+                'configure':{'background':colors[3]}
+            },
         })
-        self.style.theme_use('MyStyle')'''
+        self.style.theme_use('MyTheme')
 
-        ttk.Style().configure('TNotebook', tabposition='wn')
-        ttk.Style().configure('TNotebook.Tab', padding=[50, 10])
         self.notebook_main = ttk.Notebook(self.root)
 
         self.frames = {}
@@ -43,11 +64,11 @@ class App:
 
         self.frames['estoque'] = {'main': tk.Frame(self.notebook_main)}
         self.frames['estoque']['main'].pack(anchor='w', pady=5, padx=5)
-        self.frames['estoque']['produto'] = tk.LabelFrame(self.frames['estoque']['main'], text='Produto', relief=tk.GROOVE)
+        self.frames['estoque']['produto'] = tk.LabelFrame(self.frames['estoque']['main'], text='Produto')
         self.frames['estoque']['produto'].grid(row=0, column=0, pady=5, padx=5)
         self.frames['estoque']['dados'] = tk.Frame(self.frames['estoque']['main'])
         self.frames['estoque']['dados'].grid(row=0, column=1, pady=5, padx=5, rowspan=2)
-        self.frames['estoque']['detalhes'] = tk.LabelFrame(self.frames['estoque']['main'], text='Detalhes', relief=tk.GROOVE)
+        self.frames['estoque']['detalhes'] = tk.LabelFrame(self.frames['estoque']['main'], text='Detalhes')
         self.frames['estoque']['detalhes'].grid(row=1, column=0, pady=5, padx=5)
         self.frames['estoque']['pesquisar'] = tk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['pesquisar'].pack(pady=5, padx=5)
