@@ -9,7 +9,7 @@ id,nome,p_venda,p_custo,quantidade,descricao,data_cadastro,data_mod
 9,produto 10,10.0,9.0,94,,,
 4,produto 11,50.0,45.0,15,produto modificado,,25/05/2021
 10,produto 12,12.0,10.0,0,,,
-11,produto 13,12.0,10.0,0,testando descrição,,
+11,produto 13,12.0,10.0,0,testando descrição,,03/06/2021
 13,teste,21.0,12.0,0,,24/05/2021,24/05/2021
 14,teste 2,12.0,12.0,0,,24/05/2021,24/05/2021
 15,teste 1,10.5,9.75,0,,24/05/2021,24/05/2021

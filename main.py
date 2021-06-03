@@ -13,7 +13,7 @@ colors = [
     '#4C5F8A', # azul cinza 1 -> notebook selected tab 
     '#8497B0', # azul cinza 2 -> text
     '#D6DCE5', # azul fraco -> background
-    '#EEF1F6', # branco cinza -> entrys
+    '#EEF1F6', # branco cinza -> entrys, button text
     '#ADB9CA', # cinza -> button background
     '#F8CBAD' # laranja fraco -> treeview
 ]
@@ -21,7 +21,8 @@ colors = [
 fonts = [
     ('calibri', 18),
     ('calibri', 14),
-    ('calibri', 12)
+    ('calibri', 12),
+    ('calibri', 14, 'bold')
 ]
 
 class App:
@@ -74,14 +75,23 @@ class App:
                     'font':fonts[1]
                 }
             },
-            'TEntry':{
+            'TButton':{
                 'configure':{
-                    'fieldbackground':colors[4],
-                    'foreground':colors[2],
+                    'background':colors[5],
+                    'foreground':colors[4],
+                    'font':fonts[3],
+                    'anchor':'center'
                 }
             }
         })
         self.style.theme_use('MyTheme')
+        self.entry_style = {
+            'background':colors[4], 
+            'foreground':colors[2], 
+            'font':fonts[2], 
+            'relief':'flat',
+            'border':0
+        }
 
         self.notebook_main = ttk.Notebook(self.root)
 
@@ -105,13 +115,11 @@ class App:
 
         labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
-        for i, text in enumerate(labels_texts):
-            ttk.Label(self.frames['estoque']['produto'], 
-                text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w')
-
         entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']
-        for i, key in enumerate(entrys_keys):
-            entry = ttk.Entry(self.frames['estoque']['produto'])
+        for i, (text, key) in enumerate(zip(labels_texts, entrys_keys)):
+            ttk.Label(self.frames['estoque']['produto'], 
+                text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w', padx=[0, 2])
+            entry = tk.Entry(self.frames['estoque']['produto'], **self.entry_style)
             entry.grid(row=i, column=1, padx=[0, 10], sticky='ew')
             self.entrys['estoque'][key] = entry
 
@@ -120,23 +128,24 @@ class App:
         self.vars['button cadastrar'].set('Cadastrar')
         self.vars['button excluir'] = tk.StringVar()
         self.vars['button excluir'].set('Excluir')
-        self.buttons['estoque']['cadastrar'] = tk.Button(self.frames['estoque']['produto'], 
+        self.buttons['estoque']['cadastrar'] = ttk.Button(self.frames['estoque']['produto'], 
             textvariable=self.vars['button cadastrar'], width=button_width, command=self.register)
         self.buttons['estoque']['cadastrar'].grid(row=6, column=0, pady=10)
-        self.buttons['estoque']['excluir'] = tk.Button(self.frames['estoque']['produto'], 
+        self.buttons['estoque']['excluir'] = ttk.Button(self.frames['estoque']['produto'], 
             textvariable=self.vars['button excluir'], width=button_width, command=self.delete)
         self.buttons['estoque']['excluir'].grid(row=6, column=1, pady=10)
-        self.buttons['estoque']['filtrar'] = tk.Button(self.frames['estoque']['pesquisar'], 
+        self.buttons['estoque']['filtrar'] = ttk.Button(self.frames['estoque']['pesquisar'], 
             text='Filtrar', width=button_width, command= lambda a=0: self.set_filter('estoque'))
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
 
         self.vars['detalhes'] = tk.StringVar()
+        self.vars['detalhes'].set('\n'*12)
         ttk.Label(self.frames['estoque']['detalhes'], width=35, #height=12, 
             textvariable=self.vars['detalhes'], justify=tk.LEFT, anchor='w').pack()
 
         ttk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
 
-        self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70)
+        self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70, **self.entry_style)
         self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('estoque'))
         self.entrys['estoque']['pesquisar'].grid(row=0, column=1)
 
@@ -163,7 +172,7 @@ class App:
         self.vars['n cadastros'] = tk.StringVar()
         ttk.Label(self.frames['estoque']['relatório'], 
             text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.vars['n cadastros']).pack(side=tk.LEFT)
-        self.buttons['estoque']['relatório'] = tk.Button(self.frames['estoque']['relatório'], text='Relatório')
+        self.buttons['estoque']['relatório'] = ttk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
 
         self.frames['vendas'] = {'main': tk.Frame(self.notebook_main)}
