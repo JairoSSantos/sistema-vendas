@@ -111,7 +111,7 @@ class App:
         self.frames['estoque']['detalhes'] = ttk.LabelFrame(self.frames['estoque']['main'], text='Detalhes')
         self.frames['estoque']['detalhes'].grid(row=1, column=0, pady=5, padx=5)
         self.frames['estoque']['pesquisar'] = ttk.Frame(self.frames['estoque']['dados'])
-        self.frames['estoque']['pesquisar'].pack(pady=5, padx=5)
+        self.frames['estoque']['pesquisar'].grid(row=0, column=0, columnspan=2)
 
         labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
@@ -150,25 +150,30 @@ class App:
         self.entrys['estoque']['pesquisar'].grid(row=0, column=1)
 
         columns = [
-            ['Código', 80],
+            ['Código', 100],
             ['Nome', 250],
             ['Preço de venda', 150],
             ['Preço de custo', 150],
             ['Quantidade', 100]
         ]
 
-        self.trees['estoque'] = ttk.Treeview(
-            self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns[1:])),height=30)
-        for i, (key, width) in enumerate(columns):
-            if not i: key = '#0'
+        self.scrollbar = ttk.Scrollbar(self.frames['estoque']['dados'], orient='vertical')
+        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns)),height=30)
+        self.trees['estoque'].column('#0', width=50)
+        for key, width in columns:
             self.trees['estoque'].column(key, width=width)
-            self.trees['estoque'].heading(key, text=key if i else columns[0][0])
+            self.trees['estoque'].heading(key, text=key)
         self.trees['estoque'].bind('<Double-1>', lambda event: self.update('show_produto'))
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
-        self.trees['estoque'].pack()
+        self.trees['estoque'].configure(yscroll=self.scrollbar, selectmod='browse')
+        self.trees['estoque'].tag_configure(0, background='white')
+        self.trees['estoque'].tag_configure(1, background=colors[6])
+        self.trees['estoque'].grid(row=1, column=0)
+        self.scrollbar.config(command=self.trees['estoque'].yview)
+        self.scrollbar.grid(row=1, column=1, sticky=tk.NS)
 
         self.frames['estoque']['relatório'] = ttk.Frame(self.frames['estoque']['dados'])
-        self.frames['estoque']['relatório'].pack(pady=5, padx=5, fill='x')
+        self.frames['estoque']['relatório'].grid(row=2, column=0, columnspan=2, sticky=tk.EW)
         self.vars['n cadastros'] = tk.StringVar()
         ttk.Label(self.frames['estoque']['relatório'], 
             text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.vars['n cadastros']).pack(side=tk.LEFT)
@@ -316,9 +321,9 @@ class App:
     
     def update(self, key):
         if key == 'estoque': # atualizar a aba de estoque em geral
-            for i in self.trees[key].get_children(): self.trees[key].delete(i)
-            for item in data.storage.get_dict().values():
-                self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
+            self.trees[key].delete(*self.trees[key].get_children())
+            for i, item in enumerate(data.storage.get_dict().values()):
+                self.trees[key].insert('', 'end', text=i, values=list(item.values()), tags=[int((i+2)%2 == 0),])
             self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
