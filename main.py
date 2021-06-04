@@ -82,9 +82,29 @@ class App:
                     'font':fonts[3],
                     'anchor':'center'
                 }
+            },
+            'Treeview.Heading':{
+                'configure':{
+                    'background':colors[5],
+                    'foreground':'white',
+                    'font':fonts[2]
+                }
             }
         })
         self.style.theme_use('MyTheme')
+        self.style.layout('Treeview', [
+            ('Treeview.field', None),
+            ('Treeview.border', {'sticky':'nswe', 'children':[
+                ('Treeview.padding', {'sticky':'nswe', 'children': [
+                    ('Treeview.treearea', {'sticky': 'nswe'})
+                ]})
+            ]})
+        ])
+        self.style.configure('Treeview', background=colors[5], foreground=colors[0])
+        self.style.map('Treeview', background=[('selected', colors[0])], foreground=[('selected', 'white')])
+        print(self.style.layout('Treeview'))
+        print(self.style.element_options('Treeview.padding'))
+        # self.style.configure('Treeview.Heading', foreground='red')
         self.entry_style = {
             'background':colors[4], 
             'foreground':colors[2], 
@@ -143,7 +163,7 @@ class App:
         ttk.Label(self.frames['estoque']['detalhes'], width=35, #height=12, 
             textvariable=self.vars['detalhes'], justify=tk.LEFT, anchor='w').pack()
 
-        ttk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0)
+        ttk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0, padx=[0, 2])
 
         self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70, **self.entry_style)
         self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('estoque'))
