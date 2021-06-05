@@ -20,3 +20,6 @@ id,nome,p_venda,p_custo,quantidade,descricao,data_cadastro,data_mod
 12,novo,0.0,0.0,0,,25/05/2021,25/05/2021
 20,honks,0.0,0.0,0,,25/05/2021,25/05/2021
 6,asfamsf,0.0,0.0,-10,,26/05/2021,26/05/2021
+700098065,produto teste,100.0,90.0,50,mudança no código,05/06/2021,05/06/2021
+22,produto teste 2,98.5,70.0,15,,05/06/2021,05/06/2021
+23,produto teste 3,0.0,0.0,0,,05/06/2021,05/06/2021

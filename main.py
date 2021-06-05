@@ -100,11 +100,8 @@ class App:
                 ]})
             ]})
         ])
-        self.style.configure('Treeview', background=colors[5], foreground=colors[0])
+        self.style.configure('Treeview', background=colors[5], foreground='#52699C')
         self.style.map('Treeview', background=[('selected', colors[0])], foreground=[('selected', 'white')])
-        print(self.style.layout('Treeview'))
-        print(self.style.element_options('Treeview.padding'))
-        # self.style.configure('Treeview.Heading', foreground='red')
         self.entry_style = {
             'background':colors[4], 
             'foreground':colors[2], 
@@ -140,6 +137,9 @@ class App:
             ttk.Label(self.frames['estoque']['produto'], 
                 text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w', padx=[0, 2])
             entry = tk.Entry(self.frames['estoque']['produto'], **self.entry_style)
+            if key in ('p_venda', 'p_custo'): 
+                entry.insert(0, 'R$ 0,00')
+                entry.bind('<KeyRelease>', (lambda event: self.update('p_venda', event)) if key == 'p_venda' else (lambda event: self.update('p_custo', event)))
             entry.grid(row=i, column=1, padx=[0, 10], sticky='ew')
             self.entrys['estoque'][key] = entry
 
@@ -178,10 +178,10 @@ class App:
         ]
 
         self.scrollbar = ttk.Scrollbar(self.frames['estoque']['dados'], orient='vertical')
-        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns)),height=30)
+        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns)), height=30)
         self.trees['estoque'].column('#0', width=50)
         for key, width in columns:
-            self.trees['estoque'].column(key, width=width)
+            self.trees['estoque'].column(key, width=width, anchor='center')
             self.trees['estoque'].heading(key, text=key)
         self.trees['estoque'].bind('<Double-1>', lambda event: self.update('show_produto'))
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
@@ -281,8 +281,8 @@ class App:
         try:
             id_item = int(self.entrys['estoque']['id'].get())
             nome = str(self.entrys['estoque']['nome'].get())
-            p_venda = float(self.entrys['estoque']['p_venda'].get().replace(',', '.'))
-            p_custo = float(self.entrys['estoque']['p_custo'].get().replace(',', '.'))
+            p_venda = float(self.entrys['estoque']['p_venda'].get().lstrip('R$').replace(',', '.'))
+            p_custo = float(self.entrys['estoque']['p_custo'].get().lstrip('R$').replace(',', '.'))
             quantidade = self.entrys['estoque']['quantidade'].get()
             if quantidade == '': quantidade = 0
             descricao = str(self.entrys['estoque']['descricao'].get())
@@ -293,6 +293,8 @@ class App:
                 except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
                 else:
                     for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+                    self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
+                    self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
         
             elif self.vars['button cadastrar'].get() == 'Modificar':
                 try: data.storage.modify(self.vars['produto selecionado'], {'id':id_item, 'nome':nome, 
@@ -339,34 +341,36 @@ class App:
         
         toplevel.mainloop()
     
-    def update(self, key):
+    def update(self, key, event=None):
         if key == 'estoque': # atualizar a aba de estoque em geral
             self.trees[key].delete(*self.trees[key].get_children())
             for i, item in enumerate(data.storage.get_dict().values()):
-                self.trees[key].insert('', 'end', text=i, values=list(item.values()), tags=[int((i+2)%2 == 0),])
+                codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
+                codigo = str(codigo)
+                while len(codigo) < 5: codigo = '0'+codigo
+                self.trees[key].insert('', 'end', text=i, values=
+                    [codigo, nome, f'R$ {p_venda:.2f}', f'R$ {p_custo:.2f}', f'{quant} Un'], tags=[int((i+2)%2 == 0),])
             self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
 
         elif key == 'show_produto': # mostrar produto
             try: 
-                item = self.trees['estoque'].item(self.trees['estoque'].focus())
-                id_item = int(item['text'])
+                id_item = int(self.trees['estoque'].item(self.trees['estoque'].focus())['values'][0])
             except ValueError: pass
             else:
-                self.entrys['estoque']['id'].delete(0, tk.END)
-                self.entrys['estoque']['id'].insert(0, item['text'])
-                self.vars['produto selecionado'] = item['text']
-                for i, entry in enumerate(['nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']):
+                self.vars['produto selecionado'] = id_item
+                item = data.storage.get_item(id_item)
+                for i, entry in enumerate(['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']):
                     self.entrys['estoque'][entry].delete(0, tk.END)
-                    self.entrys['estoque'][entry].insert(0, item['values'][i])
+                    self.entrys['estoque'][entry].insert(0, item[i])
                 self.vars['button cadastrar'].set('Modificar')
                 self.vars['button excluir'].set('Cancelar')
         
         elif key == 'show_detalhes':
             item = self.trees['estoque'].item(self.trees['estoque'].focus())
             try: 
-                id_item = int(item['text'])
+                id_item = int(item['values'][0])
             except ValueError: pass
             else:
                 codigo, nome, p_venda, p_custo, quant, desc, cad, mod = data.storage.get_item(id_item)
@@ -400,6 +404,15 @@ class App:
             self.combos['dia'].current(0)
 
             data.sales.set_file('-'.join([self.combos['ano'].get(), MONTH_NUMBER[self.combos['mes'].get()]+'.csv']))
+        
+        elif key in ('p_venda', 'p_custo'):
+            val = self.entrys['estoque'][key].get()
+            if event.keysym != 'BackSpace': self.entrys['estoque'][key].delete(len(val)-1)
+            val = [char for char in val.lstrip('R$ 0') if char.isnumeric()]
+            while len(val) < 3: val.insert(0, '0')
+            val.insert(-2, ',')
+            self.entrys['estoque'][key].delete(0, tk.END)
+            self.entrys['estoque'][key].insert(0, 'R$ ' + ''.join(val))
 
         self.root.update()
 
