@@ -9,13 +9,12 @@ MONTH_NAME = dict(zip(range(1, 13), ['Janeiro', 'Fevereiro', 'Março',
 MONTH_NUMBER = {name:'0'*(2-len(str(num))) + str(num) for num, name in MONTH_NAME.items()}
 
 colors = [
-    '#203864', # azul escuro -> notebook tab
-    '#4C5F8A', # azul cinza 1 -> notebook selected tab 
-    '#8497B0', # azul cinza 2 -> text
-    '#D6DCE5', # azul fraco -> background
-    '#EEF1F6', # branco cinza -> entrys, button text
-    '#ADB9CA', # cinza -> button background
-    '#F8CBAD' # laranja fraco -> treeview
+    '#084C61', # notebook tab
+    '#DB3A34', # notebook selected tab, button background
+    '#323031', # text
+    '#177E89', # entrys
+    '#FFE8B9', # treeview
+    '#FFC857' # treeview heading
 ]
 
 fonts = [
@@ -41,9 +40,9 @@ class App:
                 'configure':{
                     'background':colors[0], 
                     'padding':[5, 5], 
-                    'width':12, 
+                    'width':11, 
                     'font':fonts[0], 
-                    'foreground':colors[4]
+                    'foreground':'white'
                 },
                 'map':{
                     'background':[('selected', colors[1])],
@@ -51,18 +50,18 @@ class App:
                 }
             },
             'TFrame':{
-                'configure':{'background':colors[3]}
+                'configure':{'background':'white'}
             },
             'TLabel':{
                 'configure':{
-                    'background':colors[3], 
+                    'background':'white', 
                     'foreground':colors[2],
                     'font':fonts[2]
                 }
             },
             'TLabelframe':{
                 'configure':{
-                    'background':colors[3], 
+                    'background':'white', 
                     'relief':'solid', 
                     'borderwidth':1, 
                     'bordercolor':colors[2]
@@ -70,15 +69,15 @@ class App:
             },
             'TLabelframe.Label':{
                 'configure':{
-                    'background':colors[3], 
+                    'background':'white', 
                     'foreground':colors[2],
                     'font':fonts[1]
                 }
             },
             'TButton':{
                 'configure':{
-                    'background':colors[5],
-                    'foreground':colors[4],
+                    'background':colors[1],
+                    'foreground':'white',
                     'font':fonts[3],
                     'anchor':'center'
                 }
@@ -100,14 +99,25 @@ class App:
                 ]})
             ]})
         ])
-        self.style.configure('Treeview', background=colors[5], foreground='#52699C')
+        self.style.configure('Treeview', background='white', foreground=colors[2])
         self.style.map('Treeview', background=[('selected', colors[0])], foreground=[('selected', 'white')])
+        self.style.layout('Vertical.TScrollbar', [
+            ('Vertical.Scrollbar.trough', {'sticky': 'ns', 'children': [
+                ('Vertical.Scrollbar.uparrow', {'side': 'top', 'sticky': ''}), 
+                ('Vertical.Scrollbar.downarrow', {'side': 'bottom', 'sticky': ''}), 
+                ('Vertical.Scrollbar.thumb', {'expand': '1', 'sticky': 'ns'})]})])
+
+        print(self.style.layout('Vertical.TScrollbar'))
+        print(self.style.element_options('Vertical.TScrollbar.trough'))
+
         self.entry_style = {
-            'background':colors[4], 
-            'foreground':colors[2], 
+            'background':'white', 
+            'foreground':colors[0], 
             'font':fonts[2], 
             'relief':'flat',
-            'border':0
+            'border':0,
+            'highlightbackground':colors[3],
+            'highlightthickness':1
         }
 
         self.notebook_main = ttk.Notebook(self.root)
@@ -187,7 +197,7 @@ class App:
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
         self.trees['estoque'].configure(yscroll=self.scrollbar, selectmod='browse')
         self.trees['estoque'].tag_configure(0, background='white')
-        self.trees['estoque'].tag_configure(1, background=colors[6])
+        self.trees['estoque'].tag_configure(1, background=colors[4])
         self.trees['estoque'].grid(row=1, column=0)
         self.scrollbar.config(command=self.trees['estoque'].yview)
         self.scrollbar.grid(row=1, column=1, sticky=tk.NS)
@@ -344,7 +354,8 @@ class App:
     def update(self, key, event=None):
         if key == 'estoque': # atualizar a aba de estoque em geral
             self.trees[key].delete(*self.trees[key].get_children())
-            for i, item in enumerate(data.storage.get_dict().values()):
+            items = data.storage.get_itemslist()
+            for i, item in enumerate(items):
                 codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
                 codigo = str(codigo)
                 while len(codigo) < 5: codigo = '0'+codigo

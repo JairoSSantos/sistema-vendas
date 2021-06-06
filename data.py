@@ -130,13 +130,13 @@ class Storage:
         else:
             return self.dataframe.loc[self.dataframe['id'] == id_item].index.item()
     
-    def get_dict(self): 
+    def get_itemslist(self): 
         '''
-        Pegar dataframe como dicionário.
+        Pegar dataframe como lista de dicionarios, cada dicionario sendo um ítem.
         returns:
-            dicionário com os dados do dataframe.
+            lista com os dados do dataframe.
         '''
-        return self.dataframe.to_dict('index')
+        return list(self.dataframe.to_dict('index').values())
     
     def get_item(self, id_item):
         '''
