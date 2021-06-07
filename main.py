@@ -102,13 +102,16 @@ class App:
         self.style.configure('Treeview', background='white', foreground=colors[2])
         self.style.map('Treeview', background=[('selected', colors[0])], foreground=[('selected', 'white')])
         self.style.layout('Vertical.TScrollbar', [
-            ('Vertical.Scrollbar.trough', {'sticky': 'ns', 'children': [
-                ('Vertical.Scrollbar.uparrow', {'side': 'top', 'sticky': ''}), 
-                ('Vertical.Scrollbar.downarrow', {'side': 'bottom', 'sticky': ''}), 
-                ('Vertical.Scrollbar.thumb', {'expand': '1', 'sticky': 'ns'})]})])
-
-        print(self.style.layout('Vertical.TScrollbar'))
-        print(self.style.element_options('Vertical.TScrollbar.trough'))
+            ('Vertical.Scrollbar.trough', {'sticky': 'ns', 'children':[
+                ('Vertical.Scrollbar.uparrow', {'side': 'top', 'sticky': ''}),
+                ('Vertical.Scrollbar.downarrow', {'side': 'bottom', 'sticky': ''}),
+                ('Vertical.Scrollbar.thumb', {'unit': '1', 'sticky': 'ns', 'children':[
+                    ('Vertical.Scrollbar.grip', {'sticky': ''})
+                ]})
+            ]})
+        ])
+        self.style.configure('Vertical.TScrollbar', background=colors[1], 
+            troughcolor=colors[4], troughrelief='flat', relief='flat', arrowcolor='white')
 
         self.entry_style = {
             'background':'white', 
@@ -132,13 +135,17 @@ class App:
         self.frames['estoque'] = {'main': ttk.Frame(self.notebook_main)}
         self.frames['estoque']['main'].pack(anchor='w', pady=5, padx=5)
         self.frames['estoque']['produto'] = ttk.LabelFrame(self.frames['estoque']['main'], text='Produto')
-        self.frames['estoque']['produto'].grid(row=0, column=0, pady=5, padx=5)
+        self.frames['estoque']['produto'].grid(row=0, column=0, pady=5, padx=5, sticky='nsew')
         self.frames['estoque']['dados'] = ttk.Frame(self.frames['estoque']['main'])
         self.frames['estoque']['dados'].grid(row=0, column=1, pady=5, padx=5, rowspan=2)
         self.frames['estoque']['detalhes'] = ttk.LabelFrame(self.frames['estoque']['main'], text='Detalhes')
-        self.frames['estoque']['detalhes'].grid(row=1, column=0, pady=5, padx=5)
+        self.frames['estoque']['detalhes'].grid(row=1, column=0, pady=5, padx=5, sticky='nsew')
         self.frames['estoque']['pesquisar'] = ttk.Frame(self.frames['estoque']['dados'])
-        self.frames['estoque']['pesquisar'].grid(row=0, column=0, columnspan=2)
+        self.frames['estoque']['pesquisar'].pack()
+        self.frames['estoque']['tree'] = ttk.Frame(self.frames['estoque']['dados'])
+        self.frames['estoque']['tree'].pack(fill='x')
+        self.frames['estoque']['relatório'] = ttk.Frame(self.frames['estoque']['dados'])
+        self.frames['estoque']['relatório'].pack(fill='x', pady=10)
 
         labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
@@ -187,23 +194,21 @@ class App:
             ['Quantidade', 100]
         ]
 
-        self.scrollbar = ttk.Scrollbar(self.frames['estoque']['dados'], orient='vertical')
-        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['dados'], columns=list(map(lambda a: a[0], columns)), height=30)
+        self.scrollbar = ttk.Scrollbar(self.frames['estoque']['tree'], orient='vertical')
+        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['tree'], columns=list(map(lambda a: a[0], columns)), height=30)
         self.trees['estoque'].column('#0', width=50)
         for key, width in columns:
             self.trees['estoque'].column(key, width=width, anchor='center')
             self.trees['estoque'].heading(key, text=key)
         self.trees['estoque'].bind('<Double-1>', lambda event: self.update('show_produto'))
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
-        self.trees['estoque'].configure(yscroll=self.scrollbar, selectmod='browse')
-        self.trees['estoque'].tag_configure(0, background='white')
-        self.trees['estoque'].tag_configure(1, background=colors[4])
-        self.trees['estoque'].grid(row=1, column=0)
+        self.trees['estoque'].configure(yscroll=self.scrollbar.set)
+        self.trees['estoque'].tag_configure(0, background=colors[4])
+        self.trees['estoque'].tag_configure(1, background='white')
+        self.trees['estoque'].pack(side=tk.LEFT)
+        self.scrollbar.pack(side=tk.RIGHT, fill='y')
         self.scrollbar.config(command=self.trees['estoque'].yview)
-        self.scrollbar.grid(row=1, column=1, sticky=tk.NS)
 
-        self.frames['estoque']['relatório'] = ttk.Frame(self.frames['estoque']['dados'])
-        self.frames['estoque']['relatório'].grid(row=2, column=0, columnspan=2, sticky=tk.EW)
         self.vars['n cadastros'] = tk.StringVar()
         ttk.Label(self.frames['estoque']['relatório'], 
             text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.vars['n cadastros']).pack(side=tk.LEFT)
@@ -281,11 +286,8 @@ class App:
         self.update('estoque')
     
     def find(self, key):
-        for i in self.trees[key].get_children(): self.trees[key].delete(i)
-        item = data.storage if key == 'estoque' else data.sales
-        for item in item.find(self.entrys[key]['pesquisar'].get(), self.vars['filtros'][key]):
-            self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
-        self.root.update()
+        if key == 'estoque':
+            self.tree_estoque_update(data.storage.find(self.entrys[key]['pesquisar'].get(), self.vars['filtros'][key]))
     
     def register(self):
         try:
@@ -351,34 +353,43 @@ class App:
         
         toplevel.mainloop()
     
-    def update(self, key, event=None):
-        if key == 'estoque': # atualizar a aba de estoque em geral
-            self.trees[key].delete(*self.trees[key].get_children())
-            items = data.storage.get_itemslist()
-            for i, item in enumerate(items):
+    def tree_estoque_update(self, items):
+        self.trees['estoque'].delete(*self.trees['estoque'].get_children())
+        for i, item in enumerate(items):
                 codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
                 codigo = str(codigo)
                 while len(codigo) < 5: codigo = '0'+codigo
-                self.trees[key].insert('', 'end', text=i, values=
+                self.trees['estoque'].insert('', 'end', text=i, values=
                     [codigo, nome, f'R$ {p_venda:.2f}', f'R$ {p_custo:.2f}', f'{quant} Un'], tags=[int((i+2)%2 == 0),])
+        if len(items) < 30:
+            for j in range(30-len(items)):
+                 self.trees['estoque'].insert('', 'end', text='', values=['']*5, tags=[int((i+j+1)%2 == 0),])
+        self.root.update()
+    
+    def update(self, key, event=None):
+        if key == 'estoque': # atualizar a aba de estoque em geral
+            self.tree_estoque_update(data.storage.get_itemslist())
             self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
 
-        elif key == 'show_produto': # mostrar produto
-            try: 
-                id_item = int(self.trees['estoque'].item(self.trees['estoque'].focus())['values'][0])
+        elif key == 'show_produto': # mostrar produto para modificar
+            try: id_item = int(self.trees['estoque'].item(self.trees['estoque'].focus())['values'][0])
             except ValueError: pass
             else:
                 self.vars['produto selecionado'] = id_item
-                item = data.storage.get_item(id_item)
-                for i, entry in enumerate(['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']):
-                    self.entrys['estoque'][entry].delete(0, tk.END)
-                    self.entrys['estoque'][entry].insert(0, item[i])
+                codigo, nome, p_venda, p_custo, quant, desc = data.storage.get_item(id_item)[:6]
+                for entry in self.entrys['estoque'].values(): entry.delete(0, tk.END)
+                self.entrys['estoque']['id'].insert(0, codigo)
+                self.entrys['estoque']['nome'].insert(0, nome)
+                self.entrys['estoque']['p_venda'].insert(0, f'R$ {p_venda:.2f}'.replace('.', ','))
+                self.entrys['estoque']['p_custo'].insert(0, f'R$ {p_custo:.2f}'.replace('.', ','))
+                self.entrys['estoque']['quantidade'].insert(0, quant)
+                self.entrys['estoque']['descricao'].insert(0, desc)
                 self.vars['button cadastrar'].set('Modificar')
                 self.vars['button excluir'].set('Cancelar')
         
-        elif key == 'show_detalhes':
+        elif key == 'show_detalhes': # mostrar detalhes do produto
             item = self.trees['estoque'].item(self.trees['estoque'].focus())
             try: 
                 id_item = int(item['values'][0])
@@ -391,19 +402,19 @@ class App:
                     f'Preço de venda: {p_venda}',
                     f'Preço de custo: {p_custo}',
                     f'Quantidade: {quant}',
-                    f'Descrição: {desc}',
+                    f'Descrição:\n  {desc}',
                     f'Data de cadastro: {cad}',
                     f'Data de última modificação: {mod}'
                 ])
                 self.vars['detalhes'].set(text)
         
-        elif key == 'vendas':
+        elif key == 'vendas': # atualizar aba de vendas em geral
             self.update('vendas_arquivo')
             for i in self.trees[key].get_children(): self.trees[key].delete(i)
             for item in data.sales.get_dict().values():
                 self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
         
-        elif key == 'vendas_arquivo':
+        elif key == 'vendas_arquivo': # atualizar arquivos de vendas
             years, months = [], []
             for year, month in map(lambda a: a.rstrip('.csv').split('-'), data.sales.get_files()):
                 years.append(year)
@@ -416,7 +427,7 @@ class App:
 
             data.sales.set_file('-'.join([self.combos['ano'].get(), MONTH_NUMBER[self.combos['mes'].get()]+'.csv']))
         
-        elif key in ('p_venda', 'p_custo'):
+        elif key in ('p_venda', 'p_custo'): # verificar a entrada dos preços
             val = self.entrys['estoque'][key].get()
             if event.keysym != 'BackSpace': self.entrys['estoque'][key].delete(len(val)-1)
             val = [char for char in val.lstrip('R$ 0') if char.isnumeric()]
