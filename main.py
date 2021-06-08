@@ -29,7 +29,6 @@ class App:
         self.root = root
         self.root.title('Controle de dados')
         self.root.state('zoomed')
-        # self.root.geometry(self.root.winfo_geometry())
 
         self.style = ttk.Style()
         self.style.theme_create('MyTheme', parent='alt', settings={
@@ -194,7 +193,7 @@ class App:
             ['Quantidade', 100]
         ]
 
-        self.scrollbar = ttk.Scrollbar(self.frames['estoque']['tree'], orient='vertical')
+        self.scrollbar_estoque = ttk.Scrollbar(self.frames['estoque']['tree'], orient='vertical')
         self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['tree'], columns=list(map(lambda a: a[0], columns)), height=30)
         self.trees['estoque'].column('#0', width=50)
         for key, width in columns:
@@ -202,12 +201,12 @@ class App:
             self.trees['estoque'].heading(key, text=key)
         self.trees['estoque'].bind('<Double-1>', lambda event: self.update('show_produto'))
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
-        self.trees['estoque'].configure(yscroll=self.scrollbar.set)
+        self.trees['estoque'].configure(yscroll=self.scrollbar_estoque.set)
         self.trees['estoque'].tag_configure(0, background=colors[4])
         self.trees['estoque'].tag_configure(1, background='white')
         self.trees['estoque'].pack(side=tk.LEFT)
-        self.scrollbar.pack(side=tk.RIGHT, fill='y')
-        self.scrollbar.config(command=self.trees['estoque'].yview)
+        self.scrollbar_estoque.pack(side=tk.RIGHT, fill='y')
+        self.scrollbar_estoque.config(command=self.trees['estoque'].yview)
 
         self.vars['n cadastros'] = tk.StringVar()
         ttk.Label(self.frames['estoque']['relatório'], 
@@ -215,12 +214,16 @@ class App:
         self.buttons['estoque']['relatório'] = ttk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
 
-        self.frames['vendas'] = {'main': tk.Frame(self.notebook_main)}
+        self.frames['vendas'] = {'main': ttk.Frame(self.notebook_main)}
         self.frames['vendas']['main'].pack()
-        self.frames['vendas']['dados'] = tk.Frame(self.frames['vendas']['main'])
-        self.frames['vendas']['dados'].pack(anchor='w')
+        self.frames['vendas']['dados'] = ttk.Frame(self.frames['vendas']['main'])
+        self.frames['vendas']['dados'].pack(fill='x', padx=10)
+        self.frames['vendas']['tree'] = ttk.Frame(self.frames['vendas']['main'])
+        self.frames['vendas']['tree'].pack(fill='x', padx=10)
+        self.frames['vendas']['rodape'] = ttk.Frame(self.frames['vendas']['main'])
+        self.frames['vendas']['rodape'].pack(fill='x', padx=10)
 
-        tk.Label(self.frames['vendas']['dados'], text='Data:').pack(side=tk.LEFT)
+        ttk.Label(self.frames['vendas']['dados'], text='Data:').pack(side=tk.LEFT)
 
         self.combos['dia'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=6)
         self.combos['dia'].pack(side=tk.LEFT, padx=2)
@@ -231,33 +234,39 @@ class App:
 
         ttk.Separator(self.frames['vendas']['dados'], orient='vertical').pack(side=tk.LEFT, fill='y', padx=10)
 
-        tk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT)
+        ttk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT)
 
-        self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'])
+        self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'], **self.entry_style)
         self.entrys['vendas']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('vendas'))
         self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT)
 
-        self.buttons['vendas']['filtrar'] = tk.Button(self.frames['vendas']['dados'], 
+        self.buttons['vendas']['filtrar'] = ttk.Button(self.frames['vendas']['dados'], 
             text='Filtrar', command=lambda a=0: self.set_filter('vendas'))
         self.buttons['vendas']['filtrar'].pack(side=tk.LEFT)
 
         columns = [
             ['Id', 80],
             ['Horário da venda', 150],
-            ['Produtos', 200],
+            ['Produtos', 300],
             ['Total', 100],
             ['Valor pago', 100],
-            ['Formato de pagamento', 150]
+            ['Formato de pagamento', 200]
         ]
 
-        self.trees['vendas'] = ttk.Treeview(self.frames['vendas']['main'], columns=list(map(lambda a: a[0], columns[1:])))
+        self.scrollbar_vendas = ttk.Scrollbar(self.frames['vendas']['tree'], orient='vertical')
+        self.trees['vendas'] = ttk.Treeview(self.frames['vendas']['tree'], columns=list(map(lambda a: a[0], columns)), height=30)
+        self.trees['vendas'].column('#0', width=50)
         for i, (key, width) in enumerate(columns):
-            if not i: key = '#0'
-            self.trees['vendas'].column(key, width=width)
-            self.trees['vendas'].heading(key, text=key if i else columns[0][0])
-        self.trees['vendas'].pack(anchor='w')
+            self.trees['vendas'].column(key, width=width, anchor='center')
+            self.trees['vendas'].heading(key, text=key)
+        self.trees['vendas'].tag_configure(0, background=colors[4])
+        self.trees['vendas'].tag_configure(1, background='white')
+        self.trees['vendas'].configure(yscroll=self.scrollbar_vendas.set)
+        self.scrollbar_vendas.config(command=self.trees['vendas'].yview)
+        self.trees['vendas'].pack(side=tk.LEFT, fill='x')
+        self.scrollbar_vendas.pack(side=tk.LEFT, fill='y')
 
-        self.buttons['vendas']['relatorio'] = tk.Button(self.frames['vendas']['main'], text='Relatório')
+        self.buttons['vendas']['relatorio'] = ttk.Button(self.frames['vendas']['rodape'], text='Relatório')
         self.buttons['vendas']['relatorio'].pack(anchor='w')
 
         self.notebook_main.add(self.frames['estoque']['main'], text='Estoque')
@@ -353,22 +362,39 @@ class App:
         
         toplevel.mainloop()
     
-    def tree_estoque_update(self, items):
-        self.trees['estoque'].delete(*self.trees['estoque'].get_children())
-        for i, item in enumerate(items):
-                codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
-                codigo = str(codigo)
-                while len(codigo) < 5: codigo = '0'+codigo
-                self.trees['estoque'].insert('', 'end', text=i, values=
-                    [codigo, nome, f'R$ {p_venda:.2f}', f'R$ {p_custo:.2f}', f'{quant} Un'], tags=[int((i+2)%2 == 0),])
-        if len(items) < 30:
-            for j in range(30-len(items)):
-                 self.trees['estoque'].insert('', 'end', text='', values=['']*5, tags=[int((i+j+1)%2 == 0),])
+    def tree_update(self, key, items):
+        if key == 'estoque':
+            self.trees[key].delete(*self.trees[key].get_children())
+            cont = 0
+            for i, item in enumerate(items):
+                    codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
+                    codigo = str(codigo)
+                    while len(codigo) < 5: codigo = '0'+codigo
+                    self.trees[key].insert('', 'end', text=i, values=[codigo, nome,
+                        f'R$ {p_venda:.2f}'.replace('.', ','), f'R$ {p_custo:.2f}'.replace('.', ','), f'{quant} Un'], 
+                        tags=int((i+2)%2 == 0))
+                    cont = i
+            if len(items) < 30:
+                for j in range(30-len(items)):
+                    self.trees[key].insert('', 'end', text='', values=['']*5, tags=int((cont+j+1)%2 == 0))
+
+        if key == 'vendas':
+            self.trees[key].delete(*self.trees[key].get_children())
+            cont = 0
+            for i, item in enumerate(items):
+                index, horario, produtos, total, pago, formato, mod = item.values()
+                self.trees[key].insert('', 'end', text=i, values=[index, horario, produtos, 
+                    f'R$ {total:.2f}'.replace('.', ','), f'R$ {pago:.2f}'.replace('.', ','), formato],  tags=int((i+2)%2 == 0))
+                cont = i
+            if len(items) < 30:
+                for j in range(30-len(items)):
+                    self.trees[key].insert('', 'end', text='', values=['']*6, tags=int((cont+j+1)%2 == 0))
+
         self.root.update()
     
     def update(self, key, event=None):
         if key == 'estoque': # atualizar a aba de estoque em geral
-            self.tree_estoque_update(data.storage.get_itemslist())
+            self.tree_update(key, data.storage.get_itemslist())
             self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
@@ -410,9 +436,7 @@ class App:
         
         elif key == 'vendas': # atualizar aba de vendas em geral
             self.update('vendas_arquivo')
-            for i in self.trees[key].get_children(): self.trees[key].delete(i)
-            for item in data.sales.get_dict().values():
-                self.trees[key].insert('', item['id'], text=item['id'], values=list(item.values())[1:])
+            self.tree_update(key, data.sales.get_itemslist())
         
         elif key == 'vendas_arquivo': # atualizar arquivos de vendas
             years, months = [], []

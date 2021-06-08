@@ -301,6 +301,14 @@ class Sales:
         '''
         return os.listdir(self.path)
     
+    def get_itemslist(self): 
+        '''
+        Pegar dataframe como lista de dicionarios, cada dicionario sendo um ítem.
+        returns:
+            lista com os dados do dataframe.
+        '''
+        return list(self.dataframe.to_dict('index').values())
+    
     def get_next_id(self):
         '''
         Pegar id da próxima venda.
