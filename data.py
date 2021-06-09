@@ -162,7 +162,8 @@ class Storage:
             id_item: O id do produto.
             columns: Nome das colunas.
         '''
-        return [self.dataframe.at[self.get_df_index(id_item), column] for column in columns]
+        if len(columns) == 1: return self.dataframe.at[self.get_df_index(id_item), columns[0]]
+        else: return [self.dataframe.at[self.get_df_index(id_item), column] for column in columns]
     
     @autosave
     def increase(self, id_item, amount):

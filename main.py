@@ -257,9 +257,9 @@ class App:
         columns = [
             ['Id', 80],
             ['Horário da venda', 150],
-            ['Produtos', 300],
-            ['Total', 100],
-            ['Valor pago', 100],
+            ['Produtos', 320],
+            ['Total', 150],
+            ['Valor pago', 150],
             ['Formato de pagamento', 200]
         ]
 
@@ -269,6 +269,7 @@ class App:
         for i, (key, width) in enumerate(columns):
             self.trees['vendas'].column(key, width=width, anchor='center')
             self.trees['vendas'].heading(key, text=key)
+        self.trees['vendas'].column('Produtos', anchor='w')
         self.trees['vendas'].tag_configure(0, background=colors[4])
         self.trees['vendas'].tag_configure(1, background='white')
         self.trees['vendas'].configure(yscroll=self.scrollbar_vendas.set)
@@ -412,13 +413,13 @@ class App:
             self.trees[key].delete(*self.trees[key].get_children())
             cont = 0
             for i, item in enumerate(items):
-                    codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
-                    codigo = str(codigo)
-                    while len(codigo) < 5: codigo = '0'+codigo
-                    self.trees[key].insert('', 'end', text=i, values=[codigo, nome,
-                        f'R$ {p_venda:.2f}'.replace('.', ','), f'R$ {p_custo:.2f}'.replace('.', ','), f'{quant} Un'], 
-                        tags=int((i+2)%2 == 0))
-                    cont = i
+                codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
+                codigo = str(codigo)
+                while len(codigo) < 5: codigo = '0'+codigo
+                self.trees[key].insert('', 'end', text=i, values=[codigo, nome,
+                    f'R$ {p_venda:.2f}'.replace('.', ','), f'R$ {p_custo:.2f}'.replace('.', ','), f'{quant} Un'], 
+                    tags=int((i+2)%2 == 0))
+                cont = i
             if len(items) < 30:
                 for j in range(30-len(items)):
                     self.trees[key].insert('', 'end', text='', values=['']*5, tags=int((cont+j+1)%2 == 0))
@@ -427,9 +428,20 @@ class App:
             self.trees[key].delete(*self.trees[key].get_children())
             cont = 0
             for i, item in enumerate(items):
-                index, horario, produtos, total, pago, formato, mod = item.values()
-                self.trees[key].insert('', 'end', text=i, values=[index, horario, produtos, 
-                    f'R$ {total:.2f}'.replace('.', ','), f'R$ {pago:.2f}'.replace('.', ','), formato],  tags=int((i+2)%2 == 0))
+                index, horario, produtos, total, pago, formato, mod = list(item.values())
+                text = []
+                produtos = produtos.split('-') if '-' in produtos else [produtos]
+                for produto in produtos:
+                    id_item, quant = produto.split('/')
+                    nome = data.storage.get_value(int(id_item), 'nome')
+                    if len(text) > 3: 
+                        text.append('...')
+                        break
+                    else: text.append(nome)
+                text = ', '.join(text)
+                self.trees[key].insert('', 'end', text=i, iid=i, values=[index, horario, text, 
+                    f'R$ {total:.2f}'.replace('.', ','), f'R$ {(pago if pago else total):.2f}'.replace('.', ','), formato],  
+                    tags=int((i+2)%2 == 0))
                 cont = i
             if len(items) < 30:
                 for j in range(30-len(items)):
