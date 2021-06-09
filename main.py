@@ -26,10 +26,12 @@ fonts = [
 
 class App:
     def __init__(self, root):
+        # configurando janela principal
         self.root = root
         self.root.title('Controle de dados')
         self.root.state('zoomed')
 
+        # definir estilo da aplicação
         self.style = ttk.Style()
         self.style.theme_create('MyTheme', parent='alt', settings={
             'TNotebook':{
@@ -111,7 +113,6 @@ class App:
         ])
         self.style.configure('Vertical.TScrollbar', background=colors[1], 
             troughcolor=colors[4], troughrelief='flat', relief='flat', arrowcolor='white')
-
         self.entry_style = {
             'background':'white', 
             'foreground':colors[0], 
@@ -122,15 +123,17 @@ class App:
             'highlightthickness':1
         }
 
+        # definir frame principal
         self.notebook_main = ttk.Notebook(self.root)
 
-        self.frames = {}
-        self.vars = {'filtros':{'estoque':None, 'vendas':None}}
-        self.entrys = {'estoque':{}, 'vendas':{}}
+        self.frames = {} # frames
+        self.vars = {'filtros':{'estoque':None, 'vendas':None}} # variáveis
+        self.entrys = {'estoque':{}, 'vendas':{}} # entradas
         self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
         self.combos = {}
 
+        # definir frames da aba estoque
         self.frames['estoque'] = {'main': ttk.Frame(self.notebook_main)}
         self.frames['estoque']['main'].pack(anchor='w', pady=5, padx=5)
         self.frames['estoque']['produto'] = ttk.LabelFrame(self.frames['estoque']['main'], text='Produto')
@@ -146,6 +149,7 @@ class App:
         self.frames['estoque']['relatório'] = ttk.Frame(self.frames['estoque']['dados'])
         self.frames['estoque']['relatório'].pack(fill='x', pady=10)
 
+        # widgets para entrada de dados do estoque
         labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
         entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']
@@ -159,6 +163,7 @@ class App:
             entry.grid(row=i, column=1, padx=[0, 10], sticky='ew')
             self.entrys['estoque'][key] = entry
 
+        # butões da aba estoque
         button_width = 10
         self.vars['button cadastrar'] = tk.StringVar()
         self.vars['button cadastrar'].set('Cadastrar')
@@ -174,17 +179,19 @@ class App:
             text='Filtrar', width=button_width, command= lambda a=0: self.set_filter('estoque'))
         self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
 
+        #definir widgets para visualizar detalhes do produto
         self.vars['detalhes'] = tk.StringVar()
         self.vars['detalhes'].set('\n'*12)
         ttk.Label(self.frames['estoque']['detalhes'], width=35, #height=12, 
             textvariable=self.vars['detalhes'], justify=tk.LEFT, anchor='w').pack()
 
+        # definir widgets para pesquisar produto
         ttk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0, padx=[0, 2])
-
         self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70, **self.entry_style)
         self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('estoque'))
         self.entrys['estoque']['pesquisar'].grid(row=0, column=1)
 
+        # definir treeview do estowue
         columns = [
             ['Código', 100],
             ['Nome', 250],
@@ -208,12 +215,14 @@ class App:
         self.scrollbar_estoque.pack(side=tk.RIGHT, fill='y')
         self.scrollbar_estoque.config(command=self.trees['estoque'].yview)
 
+        # definir widgets do relatório
         self.vars['n cadastros'] = tk.StringVar()
         ttk.Label(self.frames['estoque']['relatório'], 
             text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.vars['n cadastros']).pack(side=tk.LEFT)
         self.buttons['estoque']['relatório'] = ttk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
 
+        # definir frames de vendas
         self.frames['vendas'] = {'main': ttk.Frame(self.notebook_main)}
         self.frames['vendas']['main'].pack()
         self.frames['vendas']['dados'] = ttk.Frame(self.frames['vendas']['main'])
@@ -223,8 +232,8 @@ class App:
         self.frames['vendas']['rodape'] = ttk.Frame(self.frames['vendas']['main'])
         self.frames['vendas']['rodape'].pack(fill='x', padx=10)
 
+        # definir widgets para selecionar arquivo de vendas
         ttk.Label(self.frames['vendas']['dados'], text='Data:').pack(side=tk.LEFT)
-
         self.combos['dia'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=6)
         self.combos['dia'].pack(side=tk.LEFT, padx=2)
         self.combos['mes'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=10)
@@ -234,8 +243,8 @@ class App:
 
         ttk.Separator(self.frames['vendas']['dados'], orient='vertical').pack(side=tk.LEFT, fill='y', padx=10)
 
+        # definir widgets para pesquisar vendas
         ttk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT)
-
         self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'], **self.entry_style)
         self.entrys['vendas']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('vendas'))
         self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT)
@@ -244,6 +253,7 @@ class App:
             text='Filtrar', command=lambda a=0: self.set_filter('vendas'))
         self.buttons['vendas']['filtrar'].pack(side=tk.LEFT)
 
+        # definir treeview das vendas
         columns = [
             ['Id', 80],
             ['Horário da venda', 150],
@@ -266,17 +276,23 @@ class App:
         self.trees['vendas'].pack(side=tk.LEFT, fill='x')
         self.scrollbar_vendas.pack(side=tk.LEFT, fill='y')
 
+        # definir widgets do relatório de vendas
         self.buttons['vendas']['relatorio'] = ttk.Button(self.frames['vendas']['rodape'], text='Relatório')
         self.buttons['vendas']['relatorio'].pack(anchor='w')
 
+        # adicionar abas no notebook
         self.notebook_main.add(self.frames['estoque']['main'], text='Estoque')
         self.notebook_main.add(self.frames['vendas']['main'], text='Vendas')
         self.notebook_main.grid(row=0, column=0)
 
+        # atializar as abas
         self.update('estoque')
         self.update('vendas')
     
     def delete(self):
+        '''
+        Deletar item que esteja selecionado no treeview dos produtos.
+        '''
         if self.vars['button excluir'].get() == 'Excluir':
             try: 
                 item = self.trees['estoque'].item(self.trees['estoque'].focus())
@@ -295,10 +311,21 @@ class App:
         self.update('estoque')
     
     def find(self, key):
+        '''
+        Pesquisar nos dados o valor da entrada.
+
+        Args:
+            key: chave referente aos dados que serão utilizados
+                |-> 'estoque': dados do estoque
+                |-> 'vendas': dados das vendas
+        '''
         if key == 'estoque':
             self.tree_estoque_update(data.storage.find(self.entrys[key]['pesquisar'].get(), self.vars['filtros'][key]))
     
     def register(self):
+        '''
+        Registrar produto.
+        '''
         try:
             id_item = int(self.entrys['estoque']['id'].get())
             nome = str(self.entrys['estoque']['nome'].get())
@@ -330,6 +357,15 @@ class App:
             self.update('estoque')
     
     def set_filter(self, key):
+        '''
+        Selecionar filtro:
+            Abre um toplevel para o usuário selecionar os filtros que serão usados para pesquisar determinado valor.
+        
+        Args:
+            key: chave referente aos dados que serão utilizados
+                |-> 'estoque': dados do estoque
+                |-> 'vendas': dados das vendas
+        '''
         toplevel = tk.Toplevel()
         toplevel.title('Selecionar filtros')
         toplevel.focus_force()
@@ -363,6 +399,15 @@ class App:
         toplevel.mainloop()
     
     def tree_update(self, key, items):
+        '''
+        Atualizar treeview.
+        
+        Args:
+            key: chave referente ao treeview que será atualizado
+                |-> 'estoque': dados do estoque
+                |-> 'vendas': dados das vendas
+            items: lista dos items que serão expostos no treeview, list[dict{}, dict{}, ...]
+        '''
         if key == 'estoque':
             self.trees[key].delete(*self.trees[key].get_children())
             cont = 0
@@ -393,6 +438,18 @@ class App:
         self.root.update()
     
     def update(self, key, event=None):
+        '''
+        Atualizar aplicação.
+
+        Args:
+            key: chave referente à parte da aplicação que será atualizado.
+                |-> 'estoque': atualizar toda a aba de estoque
+                |-> 'show_produto': modificar produto
+                |-> 'show_detalhes': mostrar detalhes do produto
+                |-> 'vendas': atualizar toda a aba de vendas
+                |-> 'vendas_arquivo': atualizar arquivos de vendas
+                |-> 'p_venda' ou 'p_custo': verificar entrada dos preços
+        '''
         if key == 'estoque': # atualizar a aba de estoque em geral
             self.tree_update(key, data.storage.get_itemslist())
             self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
