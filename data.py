@@ -249,7 +249,7 @@ class Sales:
         while id_item in self.dataframe['id'].tolist(): id_item += 1
         self.dataframe = self.dataframe.append({
             'id': id_item,
-            'horario': datetime.now().strftime('%Y/%m/%d - %H:%M'),
+            'horario': datetime.now().strftime('%Y/%m/%d-%H:%M'),
             'produtos':'-'.join(['/'.join(map(str, produto)) for produto in produtos]), 
             'total':total, 
             'pago':pago, 
@@ -285,6 +285,15 @@ class Sales:
         '''
         return datetime.now().strftime('%Y/%m/%d')
     
+    def get_filedays(self):
+        '''
+        Pegar os dias registrados no arquivo.
+
+        returns:
+            set dos dias registrados.
+        '''
+        return set(map(lambda a: a[8:10], self.dataframe['horario'].tolist()))
+    
     def get_dict(self):
         '''
         Pegar dataframe como dicionário.
@@ -302,13 +311,16 @@ class Sales:
         '''
         return os.listdir(self.path)
     
-    def get_itemslist(self): 
+    def get_itemslist(self, day=None): 
         '''
         Pegar dataframe como lista de dicionarios, cada dicionario sendo um ítem.
         returns:
             lista com os dados do dataframe.
         '''
-        return list(self.dataframe.to_dict('index').values())
+        if not day:
+            return list(self.dataframe.to_dict('index').values())
+        else:
+            return list(self.dataframe.loc[self.dataframe['horario'][8:10] == day].to_dict('index').values())
     
     def get_next_id(self):
         '''
@@ -333,7 +345,9 @@ class Sales:
         '''
         if not name in self.get_files():
             raise DataError(f'Arquivo "{name}" não existe!')
-        else: self.filename = os.path.join(self.path, name)
+        else: 
+            self.filename = os.path.join(self.path, name)
+            self.update()
     
     def set_current_file(self):
         '''
@@ -344,6 +358,7 @@ class Sales:
         if not name in self.get_files():
             self.dataframe = pd.DataFrame(columns=['id', 'horario', 'produtos', 'total', 'pago', 'formato', 'mod'])
             self.save()
+        else: self.update()
     
     def update(self):
         '''

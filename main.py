@@ -89,6 +89,13 @@ class App:
                     'foreground':'white',
                     'font':fonts[2]
                 }
+            },
+            'TCombobox':{
+                'configure':{
+                    'font':fonts[1],
+                    'background':'white',
+                    'relief':'flat'
+                }
             }
         })
         self.style.theme_use('MyTheme')
@@ -108,6 +115,17 @@ class App:
                 ('Vertical.Scrollbar.downarrow', {'side': 'bottom', 'sticky': ''}),
                 ('Vertical.Scrollbar.thumb', {'unit': '1', 'sticky': 'ns', 'children':[
                     ('Vertical.Scrollbar.grip', {'sticky': ''})
+                ]})
+            ]})
+        ])
+        self.style.layout('TCombobox', [
+            ('Combobox.border', {'sticky': 'nswe', 'children': [ 
+                ('Combobox.padding', {'expand': '1', 'sticky': 'nswe', 'children': [
+                    ('Combobox.background', {'sticky': 'nswe', 'children': [
+                        ('Combobox.focus', {'expand': '1', 'sticky': 'nswe', 'children': [
+                            ('Combobox.textarea', {'sticky': 'nswe'})
+                        ]})
+                    ]})
                 ]})
             ]})
         ])
@@ -199,7 +217,6 @@ class App:
             ['Preço de custo', 150],
             ['Quantidade', 100]
         ]
-
         self.scrollbar_estoque = ttk.Scrollbar(self.frames['estoque']['tree'], orient='vertical')
         self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['tree'], columns=list(map(lambda a: a[0], columns)), height=30)
         self.trees['estoque'].column('#0', width=50)
@@ -222,6 +239,8 @@ class App:
         self.buttons['estoque']['relatório'] = ttk.Button(self.frames['estoque']['relatório'], text='Relatório')
         self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
 
+        # ===============================================================================================================================
+
         # definir frames de vendas
         self.frames['vendas'] = {'main': ttk.Frame(self.notebook_main)}
         self.frames['vendas']['main'].pack()
@@ -234,24 +253,29 @@ class App:
 
         # definir widgets para selecionar arquivo de vendas
         ttk.Label(self.frames['vendas']['dados'], text='Data:').pack(side=tk.LEFT)
-        self.combos['dia'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=6)
-        self.combos['dia'].pack(side=tk.LEFT, padx=2)
-        self.combos['mes'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=10)
-        self.combos['mes'].pack(side=tk.LEFT, padx=2)
-        self.combos['ano'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=6)
-        self.combos['ano'].pack(side=tk.LEFT, padx=2)
+        self.combos['dia'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=2, state='readonly', justify='center')
+        self.combos['dia'].bind('<<ComboboxSelected>>', lambda event: self.update('vendas_combo_dia'))
+        self.combos['dia'].pack(side=tk.LEFT)
+        ttk.Label(self.frames['vendas']['dados'], text='/').pack(side=tk.LEFT)
+        self.combos['mes'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=2, state='readonly', justify='center')
+        self.combos['mes'].bind('<<ComboboxSelected>>', lambda event: self.update('vendas_combo_mes'))
+        self.combos['mes'].pack(side=tk.LEFT)
+        ttk.Label(self.frames['vendas']['dados'], text='/').pack(side=tk.LEFT)
+        self.combos['ano'] = ttk.Combobox(self.frames['vendas']['dados'], values=['Todos'], width=4, state='readonly', justify='center')
+        self.combos['ano'].bind('<<ComboboxSelected>>', lambda event: self.update('vendas_combo_ano'))
+        self.combos['ano'].pack(side=tk.LEFT)
 
         ttk.Separator(self.frames['vendas']['dados'], orient='vertical').pack(side=tk.LEFT, fill='y', padx=10)
 
         # definir widgets para pesquisar vendas
-        ttk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT)
+        ttk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT, padx=[0, 2])
         self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'], **self.entry_style)
         self.entrys['vendas']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('vendas'))
-        self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT)
+        self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT, padx=[10])
 
         self.buttons['vendas']['filtrar'] = ttk.Button(self.frames['vendas']['dados'], 
-            text='Filtrar', command=lambda a=0: self.set_filter('vendas'))
-        self.buttons['vendas']['filtrar'].pack(side=tk.LEFT)
+            text='Filtrar', width=button_width, command= lambda a=0: self.set_filter('vendas'))
+        self.buttons['vendas']['filtrar'].pack(side=tk.LEFT, padx=7, pady=5)
 
         # definir treeview das vendas
         columns = [
@@ -262,7 +286,6 @@ class App:
             ['Valor pago', 150],
             ['Formato de pagamento', 200]
         ]
-
         self.scrollbar_vendas = ttk.Scrollbar(self.frames['vendas']['tree'], orient='vertical')
         self.trees['vendas'] = ttk.Treeview(self.frames['vendas']['tree'], columns=list(map(lambda a: a[0], columns)), height=30)
         self.trees['vendas'].column('#0', width=50)
@@ -320,8 +343,7 @@ class App:
                 |-> 'estoque': dados do estoque
                 |-> 'vendas': dados das vendas
         '''
-        if key == 'estoque':
-            self.tree_estoque_update(data.storage.find(self.entrys[key]['pesquisar'].get(), self.vars['filtros'][key]))
+        self.tree_update(key, data.storage.find(self.entrys[key]['pesquisar'].get(), self.vars['filtros'][key]))
     
     def register(self):
         '''
@@ -459,7 +481,7 @@ class App:
                 |-> 'show_produto': modificar produto
                 |-> 'show_detalhes': mostrar detalhes do produto
                 |-> 'vendas': atualizar toda a aba de vendas
-                |-> 'vendas_arquivo': atualizar arquivos de vendas
+                |-> 'vendas_verificar_arquivos': verificar arquivos de vendas e atualizar as datas
                 |-> 'p_venda' ou 'p_custo': verificar entrada dos preços
         '''
         if key == 'estoque': # atualizar a aba de estoque em geral
@@ -503,23 +525,6 @@ class App:
                 ])
                 self.vars['detalhes'].set(text)
         
-        elif key == 'vendas': # atualizar aba de vendas em geral
-            self.update('vendas_arquivo')
-            self.tree_update(key, data.sales.get_itemslist())
-        
-        elif key == 'vendas_arquivo': # atualizar arquivos de vendas
-            years, months = [], []
-            for year, month in map(lambda a: a.rstrip('.csv').split('-'), data.sales.get_files()):
-                years.append(year)
-                months.append(MONTH_NAME[int(month)])
-            self.combos['ano']['values'] = years
-            self.combos['ano'].current(0)
-            self.combos['mes']['values'] = months
-            self.combos['mes'].current(0)
-            self.combos['dia'].current(0)
-
-            data.sales.set_file('-'.join([self.combos['ano'].get(), MONTH_NUMBER[self.combos['mes'].get()]+'.csv']))
-        
         elif key in ('p_venda', 'p_custo'): # verificar a entrada dos preços
             val = self.entrys['estoque'][key].get()
             if event.keysym != 'BackSpace': self.entrys['estoque'][key].delete(len(val)-1)
@@ -528,6 +533,53 @@ class App:
             val.insert(-2, ',')
             self.entrys['estoque'][key].delete(0, tk.END)
             self.entrys['estoque'][key].insert(0, 'R$ ' + ''.join(val))
+        
+        elif key == 'vendas': # atualizar aba de vendas em geral
+            self.update('vendas_verificar_arquivos')
+            data.sales.set_current_file()
+            self.tree_update(key, data.sales.get_itemslist())
+        
+        elif key == 'vendas_verificar_arquivos': # atualizar arquivos de vendas
+            dates = {}
+            for filename in data.sales.get_files():
+                year, month = filename.rstrip('.csv').split('-')
+                data.sales.set_file(filename)
+                if year in dates.keys():
+                    dates[year][month] = data.sales.get_filedays()
+                else: dates[year] = {month:data.sales.get_filedays()}
+            self.vars['dates'] = dates
+            self.combos['ano']['values'] = list(dates.keys()) + ['----']
+            self.combos['ano'].current(len(dates)-1)
+            self.combos['mes']['values'] = list(dates[year].keys()) + ['--']
+            self.combos['mes'].current(len(dates[year])-1)
+            self.combos['dia']['values'] = list(dates[year][month]) + ['--']
+            self.combos['dia'].current(0)
+        
+        elif key == 'vendas_combo_ano':
+            year = self.combos['ano'].get()
+            if year == '----':
+                pass
+            else:
+                self.combos['mes']['values'] = list(self.vars['dates'][year].keys()) + ['--']
+                self.combos['mes'].current(len(self.vars['dates'][year])-1)
+        
+        elif key == 'vendas_combo_mes':
+            year = self.combos['ano'].get()
+            month = self.combos['mes'].get()
+            if month == '--':
+                pass
+            else:
+                self.combos['dia']['values'] = list(self.vars['dates'][year][month]) + ['--']
+                self.combos['dia'].current(len(self.vars['dates'][year])-1)
+        
+        elif key == 'vendas_combo_dia':
+            year = self.combos['ano'].get()
+            month = self.combos['mes'].get()
+            day = self.combos['dia'].get()
+            if day == '--':
+                pass
+            else:
+                self.tree_update('vendas', data.sales.get_itemslist(day))
 
         self.root.update()
 
