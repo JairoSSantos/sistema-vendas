@@ -280,7 +280,7 @@ class App:
         # definir treeview das vendas
         columns = [
             ['Id', 80],
-            ['Horário da venda', 150],
+            ['Horário', 100],
             ['Produtos', 320],
             ['Total', 150],
             ['Valor pago', 150],
@@ -461,7 +461,7 @@ class App:
                         break
                     else: text.append(nome)
                 text = ', '.join(text)
-                self.trees[key].insert('', 'end', text=i, iid=i, values=[index, horario, text, 
+                self.trees[key].insert('', 'end', text=index, values=[index, horario, text, 
                     f'R$ {total:.2f}'.replace('.', ','), f'R$ {(pago if pago else total):.2f}'.replace('.', ','), formato],  
                     tags=int((i+2)%2 == 0))
                 cont = i
@@ -542,11 +542,10 @@ class App:
         elif key == 'vendas_verificar_arquivos': # atualizar arquivos de vendas
             dates = {}
             for filename in data.sales.get_files():
-                year, month = filename.rstrip('.csv').split('-')
-                data.sales.set_file(filename)
+                year, month, day = filename.rstrip('.csv').split('-')
                 if year in dates.keys():
-                    dates[year][month] = data.sales.get_filedays()
-                else: dates[year] = {month:data.sales.get_filedays()}
+                    dates[year][month].add(day)
+                else: dates[year] = {month:{day}}
             self.vars['dates'] = dates
             self.combos['ano']['values'] = list(dates.keys()) + ['----']
             self.combos['ano'].current(len(dates)-1)
@@ -554,6 +553,8 @@ class App:
             self.combos['mes'].current(len(dates[year])-1)
             self.combos['dia']['values'] = list(dates[year][month]) + ['--']
             self.combos['dia'].current(0)
+
+            print(dates)
         
         elif key == 'vendas_combo_ano':
             year = self.combos['ano'].get()

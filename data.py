@@ -215,12 +215,12 @@ class Storage:
 class Sales:
     '''
     Classe para controlar os dados das vendas.
-        |-> As vendas são salvas por mês.
+        |-> As vendas são salvas por dia.
         |-> Os dados são armazenados em um dataframe do pandas.
         |-> Cada ítem cadastrado deve ter id diferente.
         |-> Colunas:
             |-> id: A principal idendificação da venda (não confundir com o index do dataframe, o id da venda não deve mudar)
-            |-> horario: A data e hora em que a venda foi realizada
+            |-> horario: A hora em que a venda foi realizada
             |-> produtos: produtos vendidos (formato: produto1-produto2-...; produto = id do produto/quantidade)
             |-> total: Valor total da venda.
             |-> pago: Valor pago pelo cliente.
@@ -245,11 +245,9 @@ class Sales:
             mod: alguma alteração no valor final (desconto, acréscimo, ...)
                 |-> formato: +10%, -15%, -50%, ...
         '''
-        id_item = 0
-        while id_item in self.dataframe['id'].tolist(): id_item += 1
         self.dataframe = self.dataframe.append({
-            'id': id_item,
-            'horario': datetime.now().strftime('%Y/%m/%d-%H:%M'),
+            'id': self.get_next_id(),
+            'horario': datetime.now().strftime('%H:%M'),
             'produtos':'-'.join(['/'.join(map(str, produto)) for produto in produtos]), 
             'total':total, 
             'pago':pago, 
@@ -285,15 +283,6 @@ class Sales:
         '''
         return datetime.now().strftime('%Y/%m/%d')
     
-    def get_filedays(self):
-        '''
-        Pegar os dias registrados no arquivo.
-
-        returns:
-            set dos dias registrados.
-        '''
-        return set(map(lambda a: a[8:10], self.dataframe['horario'].tolist()))
-    
     def get_dict(self):
         '''
         Pegar dataframe como dicionário.
@@ -311,16 +300,13 @@ class Sales:
         '''
         return os.listdir(self.path)
     
-    def get_itemslist(self, day=None): 
+    def get_itemslist(self): 
         '''
         Pegar dataframe como lista de dicionarios, cada dicionario sendo um ítem.
         returns:
             lista com os dados do dataframe.
         '''
-        if not day:
-            return list(self.dataframe.to_dict('index').values())
-        else:
-            return list(self.dataframe.loc[self.dataframe['horario'][8:10] == day].to_dict('index').values())
+        return list(self.dataframe.to_dict('index').values())
     
     def get_next_id(self):
         '''
@@ -341,7 +327,7 @@ class Sales:
         Definir arquivo.
 
         Args:
-            name: nome do arquivo (formato: "ano-mês.csv").
+            name: nome do arquivo (formato: "ano-mês-dia.csv").
         '''
         if not name in self.get_files():
             raise DataError(f'Arquivo "{name}" não existe!')
@@ -353,7 +339,7 @@ class Sales:
         '''
         Selecionar o arquivo de vendas atual.
         '''
-        name = date.today().strftime('%Y-%m') + '.csv'
+        name = date.today().strftime('%Y-%m-%d') + '.csv'
         self.filename = os.path.join(self.path, name)
         if not name in self.get_files():
             self.dataframe = pd.DataFrame(columns=['id', 'horario', 'produtos', 'total', 'pago', 'formato', 'mod'])
