@@ -18,7 +18,13 @@ id,nome,p_venda,p_custo,quantidade,descricao,data_cadastro,data_mod
 16,produto 17,113.85,99,94,produto para teste,06/06/2021,06/06/2021
 17,produto 18,17.25,15,37,produto para teste,06/06/2021,06/06/2021
 18,produto 19,27.6,24,7,produto para teste,06/06/2021,06/06/2021
-19,produto 20,106.95,93,80,produto para teste,06/06/2021,06/06/2021
+19,produto 20,106.95,93,80,"produto para teste
+testando multilinha:
+	-> linha 1
+ 	-> linha 2
+ 	-> linha 3
+
+",06/06/2021,12/06/2021
 20,produto 21,24.15,21,72,produto para teste,06/06/2021,06/06/2021
 21,produto 22,67.85,59,84,produto para teste,06/06/2021,06/06/2021
 22,produto 23,52.9,46,47,produto para teste,06/06/2021,06/06/2021

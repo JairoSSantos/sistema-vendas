@@ -171,9 +171,9 @@ class App:
         self.frames['estoque']['relatório'].pack(fill='x', pady=10)
 
         # widgets para entrada de dados do estoque
-        labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:', 'Descrição:']
+        labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:']
         labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
-        entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade', 'descricao']
+        entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade']
         for i, (text, key) in enumerate(zip(labels_texts, entrys_keys)):
             ttk.Label(self.frames['estoque']['produto'], 
                 text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w', padx=[0, 2])
@@ -183,6 +183,12 @@ class App:
                 entry.bind('<KeyRelease>', (lambda event: self.update('p_venda', event)) if key == 'p_venda' else (lambda event: self.update('p_custo', event)))
             entry.grid(row=i, column=1, padx=[0, 10], sticky='ew')
             self.entrys['estoque'][key] = entry
+        
+        ttk.Label(self.frames['estoque']['produto'], text='Descrição:', 
+            width=labels_width, anchor='e').grid(row=5, column=0, sticky='nw', padx=[0, 2])
+        entry = tk.Text(self.frames['estoque']['produto'], width=10, height=5, **self.entry_style)
+        entry.grid(row=5, column=1, padx=[0, 10], sticky='ew', pady=2)
+        self.entrys['estoque']['descricao'] = entry
 
         # butões da aba estoque
         self.vars['button cadastrar'] = tk.StringVar()
@@ -201,7 +207,7 @@ class App:
 
         #definir widgets para visualizar detalhes do produto
         self.vars['detalhes'] = tk.StringVar()
-        self.vars['detalhes'].set('\n'*12)
+        self.vars['detalhes'].set('\n'*17)
         ttk.Label(self.frames['estoque']['detalhes'], width=35, #height=12, 
             textvariable=self.vars['detalhes'], justify=tk.LEFT, anchor='w').pack()
 
@@ -330,10 +336,13 @@ class App:
                     data.storage.delete(id_item)
         
         elif self.vars['button excluir'].get() == 'Cancelar':
-            for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+            for item in self.entrys['estoque'].values(): 
+                try: item.delete(0, tk.END)
+                except: item.delete('0.0', tk.END)
             self.vars['button cadastrar'].set('Cadastrar')
             self.vars['button excluir'].set('Excluir')
             self.vars['produto selecionado'] = None
+            self.update('estoque')
 
         self.update('estoque')
     
@@ -365,7 +374,7 @@ class App:
             p_custo = float(self.entrys['estoque']['p_custo'].get().lstrip('R$').replace(',', '.'))
             quantidade = self.entrys['estoque']['quantidade'].get()
             if quantidade == '': quantidade = 0
-            descricao = str(self.entrys['estoque']['descricao'].get())
+            descricao = str(self.entrys['estoque']['descricao'].get('0.0', tk.END))
         except ValueError: messagebox.showwarning('Erro ao cadastrar produto!', 'Preencha os campos corretamente.')
         else:
             if self.vars['button cadastrar'].get() == 'Cadastrar':
@@ -381,7 +390,9 @@ class App:
                         'p_venda':p_venda, 'p_custo':p_custo, 'quantidade':quantidade, 'descricao':descricao})
                 except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
                 else:
-                    for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+                    for item in self.entrys['estoque'].values(): 
+                        try: item.delete(0, tk.END)
+                        except: item.delete('0.0', tk.END)
                     self.vars['button cadastrar'].set('Cadastrar')
                     self.vars['button excluir'].set('Excluir')
                     self.vars['produto selecionado'] = None
@@ -504,6 +515,10 @@ class App:
             self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
             self.entrys['estoque']['id'].delete(0, tk.END)
             self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
+            self.entrys['estoque']['p_venda'].delete(0, tk.END)
+            self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
+            self.entrys['estoque']['p_custo'].delete(0, tk.END)
+            self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
 
         elif key == 'show_produto': # mostrar produto para modificar
             try: id_item = int(self.trees['estoque'].item(self.trees['estoque'].focus())['values'][0])
@@ -511,13 +526,15 @@ class App:
             else:
                 self.vars['produto selecionado'] = id_item
                 codigo, nome, p_venda, p_custo, quant, desc = data.storage.get_item(id_item)[:6]
-                for entry in self.entrys['estoque'].values(): entry.delete(0, tk.END)
+                for entry in self.entrys['estoque'].values(): 
+                    try: entry.delete(0, tk.END)
+                    except: entry.delete('0.0', tk.END)
                 self.entrys['estoque']['id'].insert(0, codigo)
                 self.entrys['estoque']['nome'].insert(0, nome)
                 self.entrys['estoque']['p_venda'].insert(0, f'R$ {p_venda:.2f}'.replace('.', ','))
                 self.entrys['estoque']['p_custo'].insert(0, f'R$ {p_custo:.2f}'.replace('.', ','))
                 self.entrys['estoque']['quantidade'].insert(0, quant)
-                self.entrys['estoque']['descricao'].insert(0, desc)
+                self.entrys['estoque']['descricao'].insert('0.0', desc)
                 self.vars['button cadastrar'].set('Modificar')
                 self.vars['button excluir'].set('Cancelar')
         
@@ -528,13 +545,16 @@ class App:
             except ValueError: pass
             else:
                 codigo, nome, p_venda, p_custo, quant, desc, cad, mod = data.storage.get_item(id_item)
+                while len(str(codigo)) < 5: codigo = '0'+str(codigo)
+                fal_rows = 10 - len(desc.split('\n'))
                 text = '\n'.join([
                     f'Código: {codigo}',
                     f'Nome: {nome}',
-                    f'Preço de venda: {p_venda}',
-                    f'Preço de custo: {p_custo}',
+                    f'Preço de venda: R$ {p_venda:.2f}'.replace('.', ','),
+                    f'Preço de custo: R$ {p_custo:.2f}'.replace('.', ','),
                     f'Quantidade: {quant}',
-                    f'Descrição:\n  {desc}',
+                    f'Descrição: {desc}',
+                    '\n'*fal_rows,
                     f'Data de cadastro: {cad}',
                     f'Data de última modificação: {mod}'
                 ])

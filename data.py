@@ -2,8 +2,8 @@ import pandas as pd
 from datetime import date, datetime
 import os
 
-STORAGE_FILENAME = 'storage.csv' # caminho até o arquivo de estoque
-SALES_PATH = 'sales/' # caminho até a pasta de vendas
+STORAGE_FILENAME = 'data/storage.csv' # caminho até o arquivo de estoque
+SALES_PATH = 'data/sales/' # caminho até a pasta de vendas
 
 def autosave(function):
     def dec_function(itself, *args, **kwargs):
