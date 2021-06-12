@@ -101,7 +101,16 @@ class App:
                     'foreground':colors[2]
                 }
             },
-            # 'TSeparator':{'configure':{'color':colors[1]}}
+            'TMenubutton':{
+                'configure':{
+                    'background':colors[1],
+                    'foreground':'white',
+                    'font':fonts[3],
+                    'width':7,
+                    'anchor':'center',
+                    'arrowcolor':'white',
+                }
+            }
         })
         self.style.theme_use('MyTheme')
         self.style.layout('Treeview', [
@@ -143,12 +152,19 @@ class App:
             'highlightbackground':colors[3],
             'highlightthickness':1
         }
+        self.menu_style = {
+            'bg':'white',
+            'fg':colors[2],
+            'selectcolor':colors[3],
+            'activebackground':colors[3],
+            'activeforeground':'white'
+        }
 
         # definir frame principal
         self.notebook_main = ttk.Notebook(self.root)
 
         self.frames = {} # frames
-        self.vars = {'filtros':{'estoque':None, 'vendas':None}} # variáveis
+        self.vars = {'filtros':{'estoque':[], 'vendas':[]}} # variáveis
         self.entrys = {'estoque':{}, 'vendas':{}} # entradas
         self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
@@ -201,9 +217,19 @@ class App:
         self.buttons['estoque']['excluir'] = ttk.Button(self.frames['estoque']['produto'], 
             textvariable=self.vars['button excluir'], command=self.delete)
         self.buttons['estoque']['excluir'].grid(row=6, column=1, pady=10)
-        self.buttons['estoque']['filtrar'] = ttk.Button(self.frames['estoque']['pesquisar'], 
-            text='Filtrar', command= lambda a=0: self.set_filter('estoque'))
-        self.buttons['estoque']['filtrar'].grid(row=0, column=2, pady=5, padx=7)
+
+        # filtrar dados
+        self.menu_estoque = ttk.Menubutton(self.frames['estoque']['pesquisar'], text='Filtrar')
+        self.menu_estoque.menu = tk.Menu(self.menu_estoque, tearoff=0, **self.menu_style)
+        self.menu_estoque['menu'] = self.menu_estoque.menu
+        self.vars['filtros']['estoque'] = []
+        for key in ['código', 'Nome', 'Preço de venda', 'Preço de custo', 
+            'Quantidade', 'Descrição', 'Data de cadastro', 'Data de modificação']:
+            var = tk.IntVar()
+            var.set(1)
+            self.menu_estoque.menu.add_checkbutton(label=key, variable=var)
+            self.vars['filtros']['estoque'].append(var)
+        self.menu_estoque.grid(row=0, column=2, pady=5, padx=7)
 
         #definir widgets para visualizar detalhes do produto
         self.vars['detalhes'] = tk.StringVar()
@@ -281,9 +307,17 @@ class App:
         self.entrys['vendas']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('vendas'))
         self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT, padx=[10])
 
-        self.buttons['vendas']['filtrar'] = ttk.Button(self.frames['vendas']['dados'], 
-            text='Filtrar', command= lambda a=0: self.set_filter('vendas'))
-        self.buttons['vendas']['filtrar'].pack(side=tk.LEFT, padx=7, pady=5)
+        # filtrar dados
+        self.menu_vendas = ttk.Menubutton(self.frames['vendas']['dados'], text='Filtrar')
+        self.menu_vendas.menu = tk.Menu(self.menu_vendas, tearoff=0, **self.menu_style)
+        self.menu_vendas['menu'] = self.menu_vendas.menu
+        self.vars['filtros']['vendas'] = []
+        for key in ['Id', 'Horário', 'Produtos', 'Total', 'Valor pago', 'Troco', 'Formato da venda', 'Modificação']:
+            var = tk.IntVar()
+            var.set(1)
+            self.menu_vendas.menu.add_checkbutton(label=key, variable=var)
+            self.vars['filtros']['vendas'].append(var)
+        self.menu_vendas.pack(side=tk.LEFT, padx=7, pady=5)
 
         # definir treeview das vendas
         columns = [
@@ -398,48 +432,6 @@ class App:
                     self.vars['produto selecionado'] = None
             
             self.update('estoque')
-    
-    def set_filter(self, key):
-        '''
-        Selecionar filtro:
-            Abre um toplevel para o usuário selecionar os filtros que serão usados para pesquisar determinado valor.
-        
-        Args:
-            key: chave referente aos dados que serão utilizados
-                |-> 'estoque': dados do estoque
-                |-> 'vendas': dados das vendas
-        '''
-        toplevel = tk.Toplevel()
-        toplevel.title('Selecionar filtros')
-        toplevel.focus_force()
-
-        tk.Label(toplevel, text='Aplicar filtros:', width=50, anchor='w').pack()
-
-        if key == 'estoque':
-            labels = ['Código', 'Nome', 'Preço de venda', 
-                'Preço de custo', 'Quantidade', 'Descrição', 'Data de cadastro', 'Data de última modficação']
-            ck_vars = []
-            for label in labels:
-                var = tk.BooleanVar()
-                var.set(True)
-                tk.Checkbutton(toplevel, text=label, var=var).pack()
-                ck_vars.append(var)
-        
-        elif key == 'vendas':
-            labels = ['Id', 'Horário de venda', 'Produtos', 
-                'Total', 'Valor pago', 'Formato', 'Modificações']
-            ck_vars = []
-            for label in labels:
-                var = tk.BooleanVar()
-                var.set(True)
-                tk.Checkbutton(toplevel, text=label, var=var).pack()
-                ck_vars.append(var)
-        
-        def save(): self.vars['filtros'][key] = [v.get() for v in ck_vars]
-        tk.Button(toplevel, text='Salvar', command=save).pack()
-        tk.Button(toplevel, text='Calcelar', command= lambda a=0: toplevel.destroy()).pack()
-        
-        toplevel.mainloop()
     
     def tree_update(self, key, items):
         '''
