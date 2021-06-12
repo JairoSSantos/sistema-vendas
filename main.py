@@ -390,7 +390,11 @@ class App:
                 |-> 'vendas': dados das vendas
         '''
         if key == 'estoque':
-            self.tree_update(key, data.storage.find(self.entrys[key]['pesquisar'].get(), self.vars['filtros'][key]))
+            filtro = list(map(lambda a: a.get(), self.vars['filtros'][key]))
+            self.tree_update(key, data.storage.find(
+                self.entrys[key]['pesquisar'].get(), # pegar valor de entrada
+                filtro # pegar os valores variáveis das checkbox de filtragem
+            ))
         elif key == 'vendas': pass
             # self.tree_update(key, data.sales.get_itemslist())
             # value = self.entrys[key]['pesquisar'].get()
