@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox, simpledialog
 import data
+import theme
 
 class SalePay:
     def __init__(self):
@@ -29,7 +30,7 @@ class SalePay:
         '''
         stuff = [] 
         for id_item, un, name, p_venda, total in self.items:
-            stuff.append([int(un), int(id_item)])
+            stuff.append([int(id_item), int(un)])
             data.storage.decrease(int(id_item), int(un))
         data.sales.add(stuff, self.total, self.paid, form, self.mod)
     
@@ -51,25 +52,25 @@ class ConfirmApp:
 
         ID = str(data.sales.get_next_id())
         while len(ID) < 5: ID = '0'+ID
-        tk.Label(self.root, text=f'ID: {ID}  Data: {data.sales.get_current_date()}').pack()
+        ttk.Label(self.root, text=f'ID: {ID}  Data: {data.sales.get_current_date()}').pack()
 
         self.form = tk.StringVar()
         self.form.set(f'Formato: Dinheiro')
-        tk.Label(self.root, textvariable=self.form).pack()
+        ttk.Label(self.root, textvariable=self.form).pack()
 
         self.val_total = tk.StringVar()
         self.val_total.set(f'Total: R$ {self.sale.total:.2f}')
-        tk.Label(self.root, textvariable=self.val_total).pack()
+        ttk.Label(self.root, textvariable=self.val_total).pack()
 
         self.val_recebido = tk.StringVar()
         self.val_recebido.set('Valor recebido: R$ 0,00')
-        tk.Label(self.root, textvariable=self.val_recebido).pack()
+        ttk.Label(self.root, textvariable=self.val_recebido).pack()
 
         self.troco = tk.StringVar()
         self.troco.set('Troco: R$ 0,00')
-        tk.Label(self.root, textvariable=self.troco).pack()
+        ttk.Label(self.root, textvariable=self.troco).pack()
 
-        buttons_frame = tk.Frame(self.root)
+        buttons_frame = ttk.Frame(self.root)
         buttons_frame.pack()
         tk.Button(buttons_frame, text='Confirmar F2', command=self.confirm).pack(side=tk.LEFT)
         tk.Button(buttons_frame, text='Cancelar ESC', command=self.cancel).pack(side=tk.LEFT)
@@ -132,62 +133,85 @@ class ConfirmApp:
 
 class App:
     def __init__(self, root):
+        # configurar janela
         self.root = root
         self.root.title('Caixa')
+        self.root.state('zoomed')
+        self.root.config(background='white')
+
+        # definir estilo da aplicação
+        self.style = ttk.Style()
+        self.style.theme_create('MyTheme', parent='alt', settings=theme.settings_cashier)
+        self.style.theme_use('MyTheme')
+        self.style.layout('Treeview', theme.treeview_layout)
+        self.style.layout('Vertical.TScrollbar', theme.vertical_scrollbar_layout)
+        self.style.layout('TCombobox', theme.combobox_layout)
 
         self.frames = {}
         self.vars = {}
         self.entrys = {}
         self.buttons = {}
 
-        self.frames['info'] = tk.Frame(self.root)
-        self.frames['info'].pack(fill='x')
+        self.frames['info'] = tk.Frame(self.root, bg=theme.colors[3])
+        self.frames['info'].pack(fill='x', padx=20, pady=[5, 10])
+
+        self.frames['info 1'] = tk.Frame(self.frames['info'], bg=theme.colors[3])
+        self.frames['info 1'].pack(fill='y', side=tk.LEFT)
 
         self.vars['total'] = tk.StringVar()
         self.vars['total'].set('Total: 0,00 R$')
-        tk.Label(self.frames['info'], textvariable=self.vars['total']).grid(row=0, column=0, sticky='w')
+        tk.Label(self.frames['info 1'], textvariable=self.vars['total'], anchor='w',
+            font=theme.fonts[4], **theme.labelinfo_style).pack(fill='x', padx=10, pady=[10,5])
+
+        self.vars['produto info'] = tk.StringVar()
+        self.vars['produto info'].set('<código> <unidades> <nome> <preço>')
+        tk.Label(self.frames['info 1'], textvariable=self.vars['produto info'], anchor='w',
+            font=theme.fonts[6], **theme.labelinfo_style).pack(fill='x', padx=10, pady=[5,10])
 
         self.vars['arquivo info'] = tk.StringVar()
         ID = str(data.sales.get_next_id())
         while len(ID) < 5: ID = '0'+ID
         self.vars['arquivo info'].set(f'ID: {ID}  Data: {data.sales.get_current_date()}')
-        tk.Label(self.frames['info'], textvariable=self.vars['arquivo info'], justify=tk.RIGHT).grid(row=0, column=1)
+        tk.Label(self.frames['info'], textvariable=self.vars['arquivo info'],
+            font=theme.fonts[5], **theme.labelinfo_style).pack(anchor='ne', padx=5, pady=5)
 
-        self.vars['produto info'] = tk.StringVar()
-        self.vars['produto info'].set('<código> <unidades> <nome> <preço>')
-        tk.Label(self.frames['info'], 
-            textvariable=self.vars['produto info'], justify=tk.LEFT).grid(row=1, column=0, sticky='w')
+        self.frames['produtos'] = ttk.Frame(self.root)
+        self.frames['produtos'].pack()
 
         columns = {
-            'Código':100,
-            'Un':70,
-            'Nome do produto':200,
-            'Preço unitário':100,
-            'Preço total':100
+            'Código':170,
+            'Unidades':100,
+            'Nome do produto':400,
+            'Preço unitário':250,
+            'Preço total':250
         }
 
-        self.tree = ttk.Treeview(self.root, columns=list(columns.keys()))
-        self.tree.column('#0', width=70)
+        self.scrollbar = ttk.Scrollbar(self.frames['produtos'], orient='vertical')
+        self.scrollbar.pack(side=tk.RIGHT, fill='y')
+        self.tree = ttk.Treeview(self.frames['produtos'], columns=list(columns.keys()), height=17)
+        self.tree.column('#0', width=80)
         self.tree.heading('#0', text='Item')
         for name, width in columns.items():
-            self.tree.column(name, width=width)
+            self.tree.column(name, width=width, anchor='center')
             self.tree.heading(name, text=name)
         self.tree.bind('<Delete>', self.delete)
+        self.tree.configure(yscroll=self.scrollbar.set)
+        self.tree.tag_configure(0, background=theme.colors[4])
+        self.tree.tag_configure(1, background='white')
+        self.scrollbar.config(command=self.tree.yview)
         self.tree.pack()
 
-        self.frames['control'] = tk.Frame(self.root)
-        self.frames['control'].pack()
+        self.frames['control'] = ttk.Frame(self.root)
+        self.frames['control'].pack(fill='x', padx=20, pady=10)
 
-        tk.Label(self.frames['control'], text='Código do produto:').pack(side=tk.LEFT)
-        self.entrys['codigo'] = tk.Entry(self.frames['control'])
+        ttk.Label(self.frames['control'], text='Código do produto:').pack(side=tk.LEFT)
+        self.entrys['codigo'] = tk.Entry(self.frames['control'], width=70, **theme.entry_style)
         self.entrys['codigo'].bind('<Return>', self.verify_code)
-        self.entrys['codigo'].pack(side=tk.LEFT)
-        self.buttons['confirmar'] = tk.Button(self.frames['control'], text='Confirmar F2', command=self.confirm)
-        self.buttons['confirmar'].pack(side=tk.LEFT)
-        self.buttons['cancelar'] = tk.Button(self.frames['control'], text='Cancelar ESC', command=self.cancel)
-        self.buttons['cancelar'].pack(side=tk.LEFT)
-        self.buttons['calculadora'] = tk.Button(self.frames['control'], text='Calculadora F3')
-        self.buttons['calculadora'].pack(side=tk.LEFT)
+        self.entrys['codigo'].pack(side=tk.LEFT, padx=5)
+        self.buttons['confirmar'] = ttk.Button(self.frames['control'], text='Confirmar', command=self.confirm)
+        self.buttons['confirmar'].pack(side=tk.RIGHT, padx=5)
+        self.buttons['cancelar'] = ttk.Button(self.frames['control'], text='Cancelar', command=self.cancel)
+        self.buttons['cancelar'].pack(side=tk.RIGHT, padx=5)
 
         self.root.bind('<F2>', self.confirm)
         self.root.bind('<Escape>', self.cancel)
@@ -216,10 +240,18 @@ class App:
         finally: self.update()
     
     def update(self):
-        for i in self.tree.get_children(): self.tree.delete(i)
+        self.tree.delete(*self.tree.get_children())
+        cont = 17
         for i, item in enumerate(self.sale.items):
-            self.tree.insert('', i, text=i, values=item)
-        self.vars['total'].set(f'Total: {self.sale.total:.2f} R$')
+            codigo, unidades, nome, p_venda, total = item
+            while len(str(codigo)) < 5: codigo = '0' + str(codigo)
+            self.tree.insert('', 'end', text=i, values=[codigo, unidades, nome, 
+                f'R$ {p_venda:.2f}'.replace('.', ','), f'R$ {total:.2f}'.replace('.', ',')], tags=not (cont)%2)
+            cont -= 1
+        while cont >= 0:
+            self.tree.insert('', 'end', text='', values=['']*5, tags=not (cont)%2)
+            cont -= 1
+        self.vars['total'].set(f'Total: R$ {self.sale.total:.2f}'.replace('.', ','))
         self.root.update()
     
     def verify_code(self, event):
@@ -231,7 +263,8 @@ class App:
             except Exception as error: messagebox.showwarning('Erro no código.', error)
             else: 
                 self.sale.add(value, un, nome, p_venda)
-                self.vars['produto info'].set(f'{value} {un}  {nome}  {p_venda:.2f} R$')
+                while len(str(value)) < 5: value = '0'+str(value)
+                self.vars['produto info'].set(f'{value};  {un};  {nome};  R$ {p_venda:.2f};  R$ {(p_venda*un):.2f}'.replace('.', ','))
         finally: self.entrys['codigo'].delete(0, tk.END); self.update()
 
 if __name__ == '__main__':

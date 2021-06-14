@@ -350,7 +350,7 @@ testando multilinha:
 342,produto 343,89.69999999999999,78,26,produto para teste,06/06/2021,06/06/2021
 343,produto 344,74.75,65,7,produto para teste,06/06/2021,06/06/2021
 344,produto 345,115.0,100,28,produto para teste,06/06/2021,06/06/2021
-345,produto 346,73.6,64,0,produto para teste,06/06/2021,06/06/2021
+345,produto 346,73.6,64,-1,produto para teste,06/06/2021,06/06/2021
 346,produto 347,41.4,36,51,produto para teste,06/06/2021,06/06/2021
 347,produto 348,66.69999999999999,58,7,produto para teste,06/06/2021,06/06/2021
 348,produto 349,13.8,12,28,produto para teste,06/06/2021,06/06/2021
@@ -461,7 +461,7 @@ testando multilinha:
 453,produto 454,4.6,4,89,produto para teste,06/06/2021,06/06/2021
 454,produto 455,16.099999999999998,14,90,produto para teste,06/06/2021,06/06/2021
 455,produto 456,43.7,38,97,produto para teste,06/06/2021,06/06/2021
-456,produto 457,101.2,88,32,produto para teste,06/06/2021,06/06/2021
+456,produto 457,101.2,88,22,produto para teste,06/06/2021,06/06/2021
 457,produto 458,25.3,22,20,produto para teste,06/06/2021,06/06/2021
 458,produto 459,62.1,54,13,produto para teste,06/06/2021,06/06/2021
 459,produto 460,93.15,81,80,produto para teste,06/06/2021,06/06/2021

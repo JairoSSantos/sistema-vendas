@@ -2,27 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 import data
-
-MONTH_NAME = dict(zip(range(1, 13), ['Janeiro', 'Fevereiro', 'Março', 
-    'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dasembro']))
-
-MONTH_NUMBER = {name:'0'*(2-len(str(num))) + str(num) for num, name in MONTH_NAME.items()}
-
-colors = [
-    '#084C61', # notebook tab
-    '#DB3A34', # notebook selected tab, button background
-    '#323031', # text
-    '#177E89', # entrys
-    '#FFE8B9', # treeview
-    '#FFC857' # treeview heading
-]
-
-fonts = [
-    ('calibri', 18),
-    ('calibri', 14),
-    ('calibri', 12),
-    ('calibri', 14, 'bold')
-]
+import theme
 
 class App:
     def __init__(self, root):
@@ -33,132 +13,11 @@ class App:
 
         # definir estilo da aplicação
         self.style = ttk.Style()
-        self.style.theme_create('MyTheme', parent='alt', settings={
-            'TNotebook':{
-                'configure':{'tabposition':'wn', 'background':colors[0]}
-            },
-            'TNotebook.Tab':{
-                'configure':{
-                    'background':colors[0], 
-                    'padding':[5, 5], 
-                    'width':11, 
-                    'font':fonts[0], 
-                    'foreground':'white'
-                },
-                'map':{
-                    'background':[('selected', colors[1])],
-                    'expand':[('selected', [0]*4)]
-                }
-            },
-            'TFrame':{
-                'configure':{'background':'white'}
-            },
-            'TLabel':{
-                'configure':{
-                    'background':'white', 
-                    'foreground':colors[2],
-                    'font':fonts[2]
-                }
-            },
-            'TLabelframe':{
-                'configure':{
-                    'background':'white', 
-                    'relief':'solid', 
-                    'borderwidth':1, 
-                    'bordercolor':colors[2]
-                }
-            },
-            'TLabelframe.Label':{
-                'configure':{
-                    'background':'white', 
-                    'foreground':colors[2],
-                    'font':fonts[1]
-                }
-            },
-            'TButton':{
-                'configure':{
-                    'background':colors[1],
-                    'foreground':'white',
-                    'font':fonts[3],
-                    'anchor':'center',
-                    'width':10
-                }
-            },
-            'Treeview.Heading':{
-                'configure':{
-                    'background':colors[5],
-                    'foreground':'white',
-                    'font':fonts[2]
-                }
-            },
-            'TCombobox':{
-                'configure':{
-                    'font':fonts[0],
-                    'background':'white',
-                    'relief':'flat',
-                    'selectbackground':'while',
-                    'selectforeground':colors[2],
-                    'foreground':colors[2]
-                }
-            },
-            'TMenubutton':{
-                'configure':{
-                    'background':colors[1],
-                    'foreground':'white',
-                    'font':fonts[3],
-                    'width':7,
-                    'anchor':'center',
-                    'arrowcolor':'white',
-                }
-            }
-        })
+        self.style.theme_create('MyTheme', parent='alt', settings=theme.settings_main)
         self.style.theme_use('MyTheme')
-        self.style.layout('Treeview', [
-            ('Treeview.field', None),
-            ('Treeview.border', {'sticky':'nswe', 'children':[
-                ('Treeview.padding', {'sticky':'nswe', 'children': [
-                    ('Treeview.treearea', {'sticky': 'nswe'})
-                ]})
-            ]})
-        ])
-        self.style.configure('Treeview', background='white', foreground=colors[2])
-        self.style.map('Treeview', background=[('selected', colors[0])], foreground=[('selected', 'white')])
-        self.style.layout('Vertical.TScrollbar', [
-            ('Vertical.Scrollbar.trough', {'sticky': 'ns', 'children':[
-                ('Vertical.Scrollbar.uparrow', {'side': 'top', 'sticky': ''}),
-                ('Vertical.Scrollbar.downarrow', {'side': 'bottom', 'sticky': ''}),
-                ('Vertical.Scrollbar.thumb', {'unit': '1', 'sticky': 'ns', 'children':[
-                    ('Vertical.Scrollbar.grip', {'sticky': ''})
-                ]})
-            ]})
-        ])
-        self.style.layout('TCombobox', [
-            ('Combobox.border', {'sticky': 'nswe', 'children': [ 
-                ('Combobox.padding', {'expand': '1', 'sticky': 'nswe', 'children': [
-                    ('Combobox.background', {'sticky': 'nswe', 'children': [
-                        ('Combobox.textarea', {'sticky': 'nswe'})
-                    ]})
-                ]})
-            ]})
-        ])
-        self.style.configure('Vertical.TScrollbar', background=colors[1], 
-            troughcolor=colors[4], troughrelief='flat', relief='flat', arrowcolor='white')
-        self.entry_style = {
-            'background':'white', 
-            'foreground':colors[0], 
-            'font':fonts[2], 
-            'relief':'flat',
-            'border':0,
-            'highlightbackground':colors[3],
-            'highlightthickness':1
-        }
-        self.menu_style = {
-            'bg':'white',
-            'fg':colors[2],
-            'selectcolor':colors[3],
-            'activebackground':colors[3],
-            'activeforeground':'white'
-        }
+        self.style.layout('Treeview', theme.treeview_layout)
+        self.style.layout('Vertical.TScrollbar', theme.vertical_scrollbar_layout)
+        self.style.layout('TCombobox', theme.combobox_layout)
 
         # definir frame principal
         self.notebook_main = ttk.Notebook(self.root)
@@ -193,7 +52,7 @@ class App:
         for i, (text, key) in enumerate(zip(labels_texts, entrys_keys)):
             ttk.Label(self.frames['estoque']['produto'], 
                 text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w', padx=[0, 2])
-            entry = tk.Entry(self.frames['estoque']['produto'], **self.entry_style)
+            entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
             if key in ('p_venda', 'p_custo'): 
                 entry.insert(0, 'R$ 0,00')
                 entry.bind('<KeyRelease>', (lambda event: self.update('p_venda', event)) if key == 'p_venda' else (lambda event: self.update('p_custo', event)))
@@ -202,7 +61,7 @@ class App:
         
         ttk.Label(self.frames['estoque']['produto'], text='Descrição:', 
             width=labels_width, anchor='e').grid(row=5, column=0, sticky='nw', padx=[0, 2])
-        entry = tk.Text(self.frames['estoque']['produto'], width=10, height=5, **self.entry_style)
+        entry = tk.Text(self.frames['estoque']['produto'], width=10, height=5, **theme.entry_style)
         entry.grid(row=5, column=1, padx=[0, 10], sticky='ew', pady=2)
         self.entrys['estoque']['descricao'] = entry
 
@@ -220,7 +79,7 @@ class App:
 
         # filtrar dados
         self.menu_estoque = ttk.Menubutton(self.frames['estoque']['pesquisar'], text='Filtrar')
-        self.menu_estoque.menu = tk.Menu(self.menu_estoque, tearoff=0, **self.menu_style)
+        self.menu_estoque.menu = tk.Menu(self.menu_estoque, tearoff=0, **theme.menu_style)
         self.menu_estoque['menu'] = self.menu_estoque.menu
         self.vars['filtros']['estoque'] = []
         for key in ['código', 'Nome', 'Preço de venda', 'Preço de custo', 
@@ -239,7 +98,7 @@ class App:
 
         # definir widgets para pesquisar produto
         ttk.Label(self.frames['estoque']['pesquisar'], text='Pesquisar:').grid(row=0, column=0, padx=[0, 2])
-        self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70, **self.entry_style)
+        self.entrys['estoque']['pesquisar'] = tk.Entry(self.frames['estoque']['pesquisar'], width=70, **theme.entry_style)
         self.entrys['estoque']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('estoque'))
         self.entrys['estoque']['pesquisar'].grid(row=0, column=1)
 
@@ -260,7 +119,7 @@ class App:
         self.trees['estoque'].bind('<Double-1>', lambda event: self.update('show_produto'))
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
         self.trees['estoque'].configure(yscroll=self.scrollbar_estoque.set)
-        self.trees['estoque'].tag_configure(0, background=colors[4])
+        self.trees['estoque'].tag_configure(0, background=theme.colors[4])
         self.trees['estoque'].tag_configure(1, background='white')
         self.trees['estoque'].pack(side=tk.LEFT)
         self.scrollbar_estoque.pack(side=tk.RIGHT, fill='y')
@@ -303,13 +162,13 @@ class App:
 
         # definir widgets para pesquisar vendas
         ttk.Label(self.frames['vendas']['dados'], text='Pesquisar:').pack(side=tk.LEFT, padx=[0, 2])
-        self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'], width=70, **self.entry_style)
+        self.entrys['vendas']['pesquisar'] = tk.Entry(self.frames['vendas']['dados'], width=70, **theme.entry_style)
         self.entrys['vendas']['pesquisar'].bind('<KeyRelease>', lambda event: self.find('vendas'))
         self.entrys['vendas']['pesquisar'].pack(side=tk.LEFT, padx=[10])
 
         # filtrar dados
         self.menu_vendas = ttk.Menubutton(self.frames['vendas']['dados'], text='Filtrar')
-        self.menu_vendas.menu = tk.Menu(self.menu_vendas, tearoff=0, **self.menu_style)
+        self.menu_vendas.menu = tk.Menu(self.menu_vendas, tearoff=0, **theme.menu_style)
         self.menu_vendas['menu'] = self.menu_vendas.menu
         self.vars['filtros']['vendas'] = []
         for key in ['Id', 'Horário', 'Produtos', 'Total', 'Valor pago', 'Troco', 'Formato da venda', 'Modificação']:
@@ -336,7 +195,7 @@ class App:
             self.trees['vendas'].column(key, width=width, anchor='center')
             self.trees['vendas'].heading(key, text=key)
         self.trees['vendas'].column('Produtos', anchor='w')
-        self.trees['vendas'].tag_configure(0, background=colors[4])
+        self.trees['vendas'].tag_configure(0, background=theme.colors[4])
         self.trees['vendas'].tag_configure(1, background='white')
         self.trees['vendas'].configure(yscroll=self.scrollbar_vendas.set)
         self.scrollbar_vendas.config(command=self.trees['vendas'].yview)
