@@ -11,6 +11,9 @@ class SalePay:
         self.paid = 0
         self.mod = 0
 
+        self.ID = str(data.sales.get_next_id())
+        while len(self.ID) < 5: self.ID = '0'+self.ID
+
     def add(self, codigo, unidades, nome, preco):
         '''
         Adicionar produto à venda.
@@ -38,10 +41,7 @@ class SalePay:
         return self.paid - self.total
 
     def new(self):
-        self.items = []
-        self.total = 0
-        self.paid = 0
-        self.mod = 0
+        self.__init__()
     
     def set_mod(self, value): 
         self.mod += value
@@ -50,14 +50,12 @@ class SalePay:
     def set_paid(self, value): self.paid = value
     
 class ConfirmApp:
-    def __init__(self, main, sale):
-        self.main = main
-        self.root = tk.Toplevel(main.root)
+    def __init__(self, toplevel, sale, mainapp):
+        self.root = toplevel
         self.sale = sale
+        self.mainapp = mainapp
 
-        ID = str(data.sales.get_next_id())
-        while len(ID) < 5: ID = '0'+ID
-        ttk.Label(self.root, text=f'ID: {ID}  Data: {data.sales.get_current_date()}').pack()
+        ttk.Label(self.root, text=f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}').pack()
 
         self.form = tk.StringVar()
         self.form.set(f'Formato: Dinheiro')
@@ -77,31 +75,26 @@ class ConfirmApp:
 
         buttons_frame = ttk.Frame(self.root)
         buttons_frame.pack()
-        ttk.Button(buttons_frame, text='Confirmar F2', command=self.confirm).pack(side=tk.LEFT)
-        ttk.Button(buttons_frame, text='Cancelar ESC', command=self.cancel).pack(side=tk.LEFT)
+        ttk.Button(buttons_frame, text='Confirmar F2', command=lambda a=0: self.end('confirm')).pack(side=tk.LEFT)
+        ttk.Button(buttons_frame, text='Cancelar ESC', command=lambda a=0: self.end('cancel')).pack(side=tk.LEFT)
         ttk.Button(buttons_frame, text='Desconto F4', command=self.set_mod).pack(side=tk.LEFT)
         ttk.Button(buttons_frame, text='Calculadora F3').pack(side=tk.LEFT)
         self.root.bind('<KeyRelease>', self.payvalue)
-        self.root.bind('<F2>', self.confirm)
-        self.root.bind('<Escape>', self.cancel)
+        self.root.bind('<F2>', lambda event: self.end('confirm'))
+        self.root.bind('<Escape>', lambda event: self.end('cancel'))
         self.root.bind('<F4>', self.set_mod)
-
-        self.root.focus_force()
-        # self.root.mainloop()
     
-    def cancel(self, event=None):
-        if messagebox.showwarning('Cancelar venda', 'Deseja iniciar nova venda?'):
+    def end(self, key):
+        if key == 'cancel' and messagebox.showwarning('Cancelar venda', 'Deseja iniciar nova venda?'):
+            self.sale.new()
+        elif key == 'confirm':
+            self.sale.confirm(self.form.get().split(':')[-1].strip(' ').lower())
             self.sale.new()
         self.root.destroy()
-        self.main.update()
-        del self
-
-    def confirm(self, event=None):
-        self.sale.confirm(self.form.get().split(':')[-1].strip(' ').lower())
-        self.sale.new()
-        self.root.destroy()
-        self.main.update()
-        del self
+        self.root.update()
+        self.mainapp.vars['arquivo info'].set(f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}')
+        self.mainapp.vars['produto info'].set('')
+        self.mainapp.update()
     
     def payvalue(self, event): # valor pago
         # pegar valor da inerface
@@ -143,6 +136,8 @@ class ConfirmApp:
 
 class App:
     def __init__(self, root):
+        self.sale = SalePay()
+
         # configurar janela
         self.root = root
         self.root.title('Caixa')
@@ -159,8 +154,6 @@ class App:
 
         self.frames = {}
         self.vars = {}
-        self.entrys = {}
-        self.buttons = {}
 
         self.frames['info'] = tk.Frame(self.root, bg=theme.colors[3])
         self.frames['info'].pack(fill='x', padx=20, pady=[5, 10])
@@ -180,7 +173,7 @@ class App:
         self.vars['arquivo info'] = tk.StringVar()
         ID = str(data.sales.get_next_id())
         while len(ID) < 5: ID = '0'+ID
-        self.vars['arquivo info'].set(f'ID: {ID}  Data: {data.sales.get_current_date()}')
+        self.vars['arquivo info'].set(f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}')
         tk.Label(self.frames['info'], textvariable=self.vars['arquivo info'],
             font=theme.fonts[5], **theme.labelinfo_style).pack(anchor='ne', padx=5, pady=5)
 
@@ -214,18 +207,16 @@ class App:
         self.frames['control'].pack(fill='x', padx=20, pady=10)
 
         ttk.Label(self.frames['control'], text='Código do produto:').pack(side=tk.LEFT)
-        self.entrys['codigo'] = tk.Entry(self.frames['control'], width=70, **theme.entry_style)
-        self.entrys['codigo'].bind('<Return>', self.verify_code)
-        self.entrys['codigo'].pack(side=tk.LEFT, padx=5)
-        self.buttons['confirmar'] = ttk.Button(self.frames['control'], text='Confirmar', command=self.confirm)
-        self.buttons['confirmar'].pack(side=tk.RIGHT, padx=5)
-        self.buttons['cancelar'] = ttk.Button(self.frames['control'], text='Cancelar', command=self.cancel)
-        self.buttons['cancelar'].pack(side=tk.RIGHT, padx=5)
+        self.entry_codigo = tk.Entry(self.frames['control'], width=70, **theme.entry_style)
+        self.entry_codigo.bind('<Return>', self.verify_code)
+        self.entry_codigo.focus_force()
+        self.entry_codigo.pack(side=tk.LEFT, padx=5)
+        ttk.Button(self.frames['control'], text='Confirmar', command=self.confirm).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(self.frames['control'], text='Cancelar', command=self.cancel).pack(side=tk.RIGHT, padx=5)
 
         self.root.bind('<F2>', self.confirm)
         self.root.bind('<Escape>', self.cancel)
 
-        self.sale = SalePay()
         self.update()
     
     def cancel(self, event=None):
@@ -233,11 +224,9 @@ class App:
         self.update()
 
     def confirm(self, event=None):
-        ConfirmApp(self, self.sale)
-        ID = str(data.sales.get_next_id())
-        while len(ID) < 5: ID = '0'+ID
-        self.vars['arquivo info'].set(f'ID: {ID}  Data: {data.sales.get_current_date()}')
-        self.vars['produto info'].set('')
+        toplevel = tk.Toplevel()
+        toplevel.focus_force()
+        ConfirmApp(toplevel, self.sale, self)
 
     def delete(self, event):
         item = self.tree.item(self.tree.focus())
@@ -261,10 +250,11 @@ class App:
             self.tree.insert('', 'end', text='', values=['']*5, tags=not (cont)%2)
             cont -= 1
         self.vars['total'].set(f'Total: R$ {self.sale.total:.2f}'.replace('.', ','))
+        self.entry_codigo.focus()
         self.root.update()
     
     def verify_code(self, event):
-        value = self.entrys['codigo'].get()
+        value = self.entry_codigo.get()
         try: un, value = map(int, value.split('x')) if 'x' in value else [1, int(value)]
         except ValueError: messagebox.showwarning('Formáto inválido.', 'Erro no formato do código.\nDigite corretamente.')
         else:
@@ -274,7 +264,7 @@ class App:
                 self.sale.add(value, un, nome, p_venda)
                 while len(str(value)) < 5: value = '0'+str(value)
                 self.vars['produto info'].set(f'{value};  {un};  {nome};  R$ {p_venda:.2f};  R$ {(p_venda*un):.2f}'.replace('.', ','))
-        finally: self.entrys['codigo'].delete(0, tk.END); self.update()
+        finally: self.entry_codigo.delete(0, tk.END); self.update()
 
 if __name__ == '__main__':
     data.init()

@@ -25,7 +25,6 @@ class App:
         self.frames = {} # frames
         self.vars = {'filtros':{'estoque':[], 'vendas':[]}} # variáveis
         self.entrys = {'estoque':{}, 'vendas':{}} # entradas
-        self.buttons = {'estoque':{}, 'vendas':{}}
         self.trees = {}
         self.combos = {}
 
@@ -70,12 +69,8 @@ class App:
         self.vars['button cadastrar'].set('Cadastrar')
         self.vars['button excluir'] = tk.StringVar()
         self.vars['button excluir'].set('Excluir')
-        self.buttons['estoque']['cadastrar'] = ttk.Button(self.frames['estoque']['produto'], 
-            textvariable=self.vars['button cadastrar'], command=self.register)
-        self.buttons['estoque']['cadastrar'].grid(row=6, column=0, pady=10)
-        self.buttons['estoque']['excluir'] = ttk.Button(self.frames['estoque']['produto'], 
-            textvariable=self.vars['button excluir'], command=self.delete)
-        self.buttons['estoque']['excluir'].grid(row=6, column=1, pady=10)
+        ttk.Button(self.frames['estoque']['produto'], textvariable=self.vars['button cadastrar'], command=self.register).grid(row=6, column=0, pady=10)
+        ttk.Button(self.frames['estoque']['produto'], textvariable=self.vars['button excluir'], command=self.delete).grid(row=6, column=1, pady=10)
 
         # filtrar dados
         self.menu_estoque = ttk.Menubutton(self.frames['estoque']['pesquisar'], text='Filtrar')
@@ -129,8 +124,7 @@ class App:
         self.vars['n cadastros'] = tk.StringVar()
         ttk.Label(self.frames['estoque']['relatório'], 
             text='Produtos cadastrados:', width=30, anchor='w', textvariable=self.vars['n cadastros']).pack(side=tk.LEFT)
-        self.buttons['estoque']['relatório'] = ttk.Button(self.frames['estoque']['relatório'], text='Relatório')
-        self.buttons['estoque']['relatório'].pack(side=tk.RIGHT)
+        ttk.Button(self.frames['estoque']['relatório'], text='Relatório').pack(side=tk.RIGHT)
 
         # ===============================================================================================================================
 
@@ -203,8 +197,7 @@ class App:
         self.scrollbar_vendas.pack(side=tk.LEFT, fill='y')
 
         # definir widgets do relatório de vendas
-        self.buttons['vendas']['relatorio'] = ttk.Button(self.frames['vendas']['dados'], text='Relatório')
-        self.buttons['vendas']['relatorio'].pack(side=tk.LEFT)
+        ttk.Button(self.frames['vendas']['dados'], text='Relatório').pack(side=tk.LEFT)
 
         # adicionar abas no notebook
         self.notebook_main.add(self.frames['estoque']['main'], text='Estoque')
@@ -437,7 +430,7 @@ class App:
                 else: dates[year] = {month:[day]}
             self.vars['dates'] = dates
             self.combos['ano']['values'] = list(dates.keys()) + ['----']
-            self.combos['ano'].current(0)
+            self.combos['ano'].current(len(dates.keys())-1)
             self.update('vendas_combo_ano')
             self.update('vendas_combo_mes')
             self.update('vendas_combo_dia')
@@ -448,7 +441,7 @@ class App:
                 pass
             else:
                 self.combos['mes']['values'] = list(self.vars['dates'][year].keys()) + ['--']
-                self.combos['mes'].current(0)
+                self.combos['mes'].current(len(self.vars['dates'][year].keys())-1)
         
         elif key == 'vendas_combo_mes':
             year = self.combos['ano'].get()
@@ -457,7 +450,7 @@ class App:
                 pass
             else:
                 self.combos['dia']['values'] = self.vars['dates'][year][month] + ['--']
-                self.combos['dia'].current(0)
+                self.combos['dia'].current(len(self.vars['dates'][year][month])-1)
         
         elif key == 'vendas_combo_dia':
             year = self.combos['ano'].get()
