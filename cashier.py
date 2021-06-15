@@ -52,33 +52,37 @@ class SalePay:
 class ConfirmApp:
     def __init__(self, toplevel, sale, mainapp):
         self.root = toplevel
+        self.root.config(bg=theme.colors[0])
         self.sale = sale
         self.mainapp = mainapp
 
-        ttk.Label(self.root, text=f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}').pack()
+        tk.Label(self.root, text=f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}', 
+            font=theme.fonts[5], bg=theme.colors[5], fg='white').pack(fill='x')
+
+        labelstyle = {'font':theme.fonts[7], 'bg':theme.colors[0], 'fg':'white'}
 
         self.form = tk.StringVar()
-        self.form.set(f'Formato: Dinheiro')
-        ttk.Label(self.root, textvariable=self.form).pack()
+        self.form.set(f'Formato: dinheiro')
+        tk.Label(self.root, textvariable=self.form, **labelstyle).pack(padx=10, pady=5, anchor='w')
 
         self.val_total = tk.StringVar()
         self.val_total.set(f'Total: R$ {self.sale.total:.2f}')
-        ttk.Label(self.root, textvariable=self.val_total).pack()
+        tk.Label(self.root, textvariable=self.val_total, **labelstyle).pack(padx=10, pady=5, anchor='w')
 
         self.val_recebido = tk.StringVar()
         self.val_recebido.set('Valor recebido: R$ 0,00')
-        ttk.Label(self.root, textvariable=self.val_recebido).pack()
+        tk.Label(self.root, textvariable=self.val_recebido, **labelstyle).pack(padx=10, pady=5, anchor='w')
 
         self.troco = tk.StringVar()
         self.troco.set('Troco: R$ 0,00')
-        ttk.Label(self.root, textvariable=self.troco).pack()
+        tk.Label(self.root, textvariable=self.troco, **labelstyle).pack(padx=10, pady=5, anchor='w')
 
-        buttons_frame = ttk.Frame(self.root)
+        buttons_frame = tk.Frame(self.root, bg=theme.colors[0])
         buttons_frame.pack()
-        ttk.Button(buttons_frame, text='Confirmar F2', command=lambda a=0: self.end('confirm')).pack(side=tk.LEFT)
-        ttk.Button(buttons_frame, text='Cancelar ESC', command=lambda a=0: self.end('cancel')).pack(side=tk.LEFT)
-        ttk.Button(buttons_frame, text='Desconto F4', command=self.set_mod).pack(side=tk.LEFT)
-        ttk.Button(buttons_frame, text='Calculadora F3').pack(side=tk.LEFT)
+        ttk.Button(buttons_frame, text='Confirmar', command=lambda a=0: self.end('confirm')).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(buttons_frame, text='Cancelar', command=lambda a=0: self.end('cancel')).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(buttons_frame, text='Desconto', command=self.set_mod).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(buttons_frame, text='Calculadora').pack(side=tk.LEFT, padx=5, pady=5)
         self.root.bind('<KeyRelease>', self.payvalue)
         self.root.bind('<F2>', lambda event: self.end('confirm'))
         self.root.bind('<Escape>', lambda event: self.end('cancel'))

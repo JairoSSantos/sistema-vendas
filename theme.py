@@ -15,7 +15,8 @@ fonts = [
     ('calibri', 14, 'bold'),    # 3
     ('calibri', 32),    # 4
     ('calibri', 16),    # 5
-    ('calibri', 20)     # 6
+    ('calibri', 20),     # 6
+    ('calibri', 24)     # 7
 ]
 
 # configurações do estilo da janela de controle
