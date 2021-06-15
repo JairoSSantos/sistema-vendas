@@ -1,21 +1,21 @@
 id,nome,p_venda,p_custo,quantidade,descricao,data_cadastro,data_mod
 0,produto 1,108.1,94,51,produto para teste,06/06/2021,06/06/2021
-1,produto 2,25.3,22,57,produto para teste,06/06/2021,06/06/2021
-2,produto 3,20.7,18,8,produto para teste,06/06/2021,06/06/2021
-3,produto 4,13.8,12,25,produto para teste,06/06/2021,06/06/2021
-4,produto 5,31.05,27,89,produto para teste,06/06/2021,06/06/2021
-5,produto 6,93.15,81,77,produto para teste,06/06/2021,06/06/2021
-6,produto 7,78.19999999999999,68,71,produto para teste,06/06/2021,06/06/2021
-7,produto 8,27.6,24,63,produto para teste,06/06/2021,06/06/2021
-8,produto 9,59.8,52,50,produto para teste,06/06/2021,06/06/2021
-9,produto 10,27.6,24,11,produto para teste,06/06/2021,06/06/2021
-10,produto 11,11.5,10,6,produto para teste,06/06/2021,06/06/2021
-11,produto 12,110.4,96,16,produto para teste,06/06/2021,06/06/2021
-12,produto 13,37.95,34,54,produto modificado,06/06/2021,07/06/2021
-13,produto 14,109.25,95,96,produto para teste,06/06/2021,06/06/2021
-14,produto 15,90.85,79,57,produto para teste,06/06/2021,06/06/2021
-15,produto 16,89.69999999999999,78,17,produto para teste,06/06/2021,06/06/2021
-16,produto 17,113.85,99,94,produto para teste,06/06/2021,06/06/2021
+1,produto 2,25.3,22,56,produto para teste,06/06/2021,06/06/2021
+2,produto 3,20.7,18,5,produto para teste,06/06/2021,06/06/2021
+3,produto 4,13.8,12,21,produto para teste,06/06/2021,06/06/2021
+4,produto 5,31.05,27,88,produto para teste,06/06/2021,06/06/2021
+5,produto 6,93.15,81,76,produto para teste,06/06/2021,06/06/2021
+6,produto 7,78.19999999999999,68,70,produto para teste,06/06/2021,06/06/2021
+7,produto 8,27.6,24,62,produto para teste,06/06/2021,06/06/2021
+8,produto 9,59.8,52,49,produto para teste,06/06/2021,06/06/2021
+9,produto 10,27.6,24,10,produto para teste,06/06/2021,06/06/2021
+10,produto 11,11.5,10,5,produto para teste,06/06/2021,06/06/2021
+11,produto 12,110.4,96,15,produto para teste,06/06/2021,06/06/2021
+12,produto 13,37.95,34,53,produto modificado,06/06/2021,07/06/2021
+13,produto 14,109.25,95,95,produto para teste,06/06/2021,06/06/2021
+14,produto 15,90.85,79,56,produto para teste,06/06/2021,06/06/2021
+15,produto 16,89.69999999999999,78,16,produto para teste,06/06/2021,06/06/2021
+16,produto 17,113.85,99,93,produto para teste,06/06/2021,06/06/2021
 17,produto 18,17.25,15,37,produto para teste,06/06/2021,06/06/2021
 18,produto 19,27.6,24,7,produto para teste,06/06/2021,06/06/2021
 19,produto 20,106.95,93,80,"produto para teste
@@ -36,8 +36,8 @@ testando multilinha:
 28,produto 29,73.6,64,92,produto para teste,06/06/2021,06/06/2021
 29,produto 30,81.64999999999999,71,26,produto para teste,06/06/2021,06/06/2021
 30,produto 31,85.1,74,83,produto para teste,06/06/2021,06/06/2021
-31,produto 32,35.65,31,96,produto para teste,06/06/2021,06/06/2021
-32,produto 33,1.15,1,48,produto para teste,06/06/2021,06/06/2021
+31,produto 32,35.65,31,95,produto para teste,06/06/2021,06/06/2021
+32,produto 33,1.15,1,47,produto para teste,06/06/2021,06/06/2021
 33,produto 34,10.35,9,69,produto para teste,06/06/2021,06/06/2021
 34,produto 35,75.89999999999999,66,29,produto para teste,06/06/2021,06/06/2021
 35,produto 36,40.25,35,92,produto para teste,06/06/2021,06/06/2021
@@ -50,7 +50,7 @@ testando multilinha:
 42,produto 43,56.35,49,10,produto para teste,06/06/2021,06/06/2021
 43,produto 44,56.35,49,8,produto para teste,06/06/2021,06/06/2021
 44,produto 45,80.5,70,43,produto para teste,06/06/2021,06/06/2021
-45,produto 46,9.2,8,38,produto para teste,06/06/2021,06/06/2021
+45,produto 46,9.2,8,36,produto para teste,06/06/2021,06/06/2021
 46,produto 47,71.3,62,77,produto para teste,06/06/2021,06/06/2021
 47,produto 48,47.15,41,69,produto para teste,06/06/2021,06/06/2021
 48,produto 49,57.49999999999999,50,21,produto para teste,06/06/2021,06/06/2021
@@ -59,7 +59,7 @@ testando multilinha:
 51,produto 52,39.1,34,21,produto para teste,06/06/2021,06/06/2021
 52,produto 53,57.49999999999999,50,15,produto para teste,06/06/2021,06/06/2021
 53,produto 54,18.4,16,82,produto para teste,06/06/2021,06/06/2021
-54,produto 55,102.35,89,55,produto para teste,06/06/2021,06/06/2021
+54,produto 55,102.35,89,54,produto para teste,06/06/2021,06/06/2021
 55,produto 56,90.85,79,78,produto para teste,06/06/2021,06/06/2021
 56,produto 57,71.3,62,15,produto para teste,06/06/2021,06/06/2021
 57,produto 58,21.85,19,80,produto para teste,06/06/2021,06/06/2021
@@ -92,7 +92,7 @@ testando multilinha:
 84,produto 85,19.55,17,39,produto para teste,06/06/2021,06/06/2021
 85,produto 86,31.05,27,29,produto para teste,06/06/2021,06/06/2021
 86,produto 87,29.9,26,43,produto para teste,06/06/2021,06/06/2021
-87,produto 88,59.8,52,45,produto para teste,06/06/2021,06/06/2021
+87,produto 88,59.8,52,44,produto para teste,06/06/2021,06/06/2021
 88,produto 89,40.25,35,7,produto para teste,06/06/2021,06/06/2021
 89,produto 90,106.95,93,48,produto para teste,06/06/2021,06/06/2021
 90,produto 91,111.55,97,66,produto para teste,06/06/2021,06/06/2021
@@ -148,7 +148,7 @@ testando multilinha:
 140,produto 141,86.25,75,33,produto para teste,06/06/2021,06/06/2021
 141,produto 142,62.1,54,100,produto para teste,06/06/2021,06/06/2021
 142,produto 143,6.9,6,43,produto para teste,06/06/2021,06/06/2021
-143,produto 144,55.2,48,44,produto para teste,06/06/2021,06/06/2021
+143,produto 144,55.2,48,43,produto para teste,06/06/2021,06/06/2021
 144,produto 145,4.6,4,35,produto para teste,06/06/2021,06/06/2021
 145,produto 146,108.1,94,94,produto para teste,06/06/2021,06/06/2021
 146,produto 147,86.25,75,77,produto para teste,06/06/2021,06/06/2021
@@ -203,8 +203,8 @@ testando multilinha:
 195,produto 196,27.6,24,78,produto para teste,06/06/2021,06/06/2021
 196,produto 197,39.1,34,61,produto para teste,06/06/2021,06/06/2021
 197,produto 198,73.6,64,36,produto para teste,06/06/2021,06/06/2021
-198,produto 199,34.5,30,30,produto para teste,06/06/2021,06/06/2021
-199,produto 200,1.15,1,23,produto para teste,06/06/2021,06/06/2021
+198,produto 199,34.5,30,29,produto para teste,06/06/2021,06/06/2021
+199,produto 200,1.15,1,22,produto para teste,06/06/2021,06/06/2021
 200,produto 201,64.39999999999999,56,78,produto para teste,06/06/2021,06/06/2021
 201,produto 202,17.25,15,79,produto para teste,06/06/2021,06/06/2021
 202,produto 203,8.049999999999999,7,7,produto para teste,06/06/2021,06/06/2021
@@ -239,7 +239,7 @@ testando multilinha:
 231,produto 232,40.25,35,100,produto para teste,06/06/2021,06/06/2021
 232,produto 233,60.95,53,23,produto para teste,06/06/2021,06/06/2021
 233,produto 234,0.0,0,33,produto para teste,06/06/2021,06/06/2021
-234,produto 235,77.05,67,55,produto para teste,06/06/2021,06/06/2021
+234,produto 235,77.05,67,48,produto para teste,06/06/2021,06/06/2021
 235,produto 236,8.049999999999999,7,5,produto para teste,06/06/2021,06/06/2021
 236,produto 237,48.3,42,64,produto para teste,06/06/2021,06/06/2021
 237,produto 238,74.75,65,99,produto para teste,06/06/2021,06/06/2021
@@ -291,8 +291,8 @@ testando multilinha:
 283,produto 284,48.3,42,80,produto para teste,06/06/2021,06/06/2021
 284,produto 285,49.45,43,38,produto para teste,06/06/2021,06/06/2021
 285,produto 286,39.1,34,43,produto para teste,06/06/2021,06/06/2021
-286,produto 287,46.0,40,21,produto para teste,06/06/2021,06/06/2021
-287,produto 288,52.9,46,2,produto para teste,06/06/2021,06/06/2021
+286,produto 287,46.0,40,20,produto para teste,06/06/2021,06/06/2021
+287,produto 288,52.9,46,1,produto para teste,06/06/2021,06/06/2021
 288,produto 289,79.35,69,83,produto para teste,06/06/2021,06/06/2021
 289,produto 290,33.349999999999994,29,73,produto para teste,06/06/2021,06/06/2021
 290,produto 291,48.3,42,28,produto para teste,06/06/2021,06/06/2021
@@ -326,7 +326,7 @@ testando multilinha:
 318,produto 319,75.89999999999999,66,29,produto para teste,06/06/2021,06/06/2021
 319,produto 320,100.05,87,49,produto para teste,06/06/2021,06/06/2021
 320,produto 321,41.4,36,33,produto para teste,06/06/2021,06/06/2021
-321,produto 322,49.45,43,15,produto para teste,06/06/2021,06/06/2021
+321,produto 322,49.45,43,13,produto para teste,06/06/2021,06/06/2021
 322,produto 323,54.05,47,80,produto para teste,06/06/2021,06/06/2021
 323,produto 324,83.94999999999999,73,77,produto para teste,06/06/2021,06/06/2021
 324,produto 325,102.35,89,37,produto para teste,06/06/2021,06/06/2021
@@ -350,7 +350,7 @@ testando multilinha:
 342,produto 343,89.69999999999999,78,26,produto para teste,06/06/2021,06/06/2021
 343,produto 344,74.75,65,7,produto para teste,06/06/2021,06/06/2021
 344,produto 345,115.0,100,28,produto para teste,06/06/2021,06/06/2021
-345,produto 346,73.6,64,-1,produto para teste,06/06/2021,06/06/2021
+345,produto 346,73.6,64,-11,produto para teste,06/06/2021,06/06/2021
 346,produto 347,41.4,36,51,produto para teste,06/06/2021,06/06/2021
 347,produto 348,66.69999999999999,58,7,produto para teste,06/06/2021,06/06/2021
 348,produto 349,13.8,12,28,produto para teste,06/06/2021,06/06/2021
@@ -370,7 +370,7 @@ testando multilinha:
 362,produto 363,94.3,82,82,produto para teste,06/06/2021,06/06/2021
 363,produto 364,60.95,53,58,produto para teste,06/06/2021,06/06/2021
 364,produto 365,97.75,85,65,produto para teste,06/06/2021,06/06/2021
-365,produto 366,75.89999999999999,66,88,produto para teste,06/06/2021,06/06/2021
+365,produto 366,75.89999999999999,66,87,produto para teste,06/06/2021,06/06/2021
 366,produto 367,6.9,6,13,produto para teste,06/06/2021,06/06/2021
 367,produto 368,94.3,82,32,produto para teste,06/06/2021,06/06/2021
 368,produto 369,69.0,60,43,produto para teste,06/06/2021,06/06/2021
@@ -437,7 +437,7 @@ testando multilinha:
 429,produto 430,59.8,52,15,produto para teste,06/06/2021,06/06/2021
 430,produto 431,57.49999999999999,50,83,produto para teste,06/06/2021,06/06/2021
 431,produto 432,48.3,42,79,produto para teste,06/06/2021,06/06/2021
-432,produto 433,41.4,36,42,produto para teste,06/06/2021,06/06/2021
+432,produto 433,41.4,36,41,produto para teste,06/06/2021,06/06/2021
 433,produto 434,66.69999999999999,58,1,produto para teste,06/06/2021,06/06/2021
 434,produto 435,88.55,77,51,produto para teste,06/06/2021,06/06/2021
 435,produto 436,56.35,49,83,produto para teste,06/06/2021,06/06/2021
@@ -456,9 +456,9 @@ testando multilinha:
 448,produto 449,33.349999999999994,29,20,produto para teste,06/06/2021,06/06/2021
 449,produto 450,77.05,67,75,produto para teste,06/06/2021,06/06/2021
 450,produto 451,113.85,99,17,produto para teste,06/06/2021,06/06/2021
-451,produto 452,93.15,81,21,produto para teste,06/06/2021,06/06/2021
+451,produto 452,93.15,81,20,produto para teste,06/06/2021,06/06/2021
 452,produto 453,96.6,84,24,produto para teste,06/06/2021,06/06/2021
-453,produto 454,4.6,4,89,produto para teste,06/06/2021,06/06/2021
+453,produto 454,4.6,4,88,produto para teste,06/06/2021,06/06/2021
 454,produto 455,16.099999999999998,14,90,produto para teste,06/06/2021,06/06/2021
 455,produto 456,43.7,38,97,produto para teste,06/06/2021,06/06/2021
 456,produto 457,101.2,88,22,produto para teste,06/06/2021,06/06/2021
@@ -470,7 +470,7 @@ testando multilinha:
 462,produto 463,26.45,23,73,produto para teste,06/06/2021,06/06/2021
 463,produto 464,5.75,5,20,produto para teste,06/06/2021,06/06/2021
 464,produto 465,25.3,22,69,produto para teste,06/06/2021,06/06/2021
-465,produto 466,34.5,30,21,produto para teste,06/06/2021,06/06/2021
+465,produto 466,34.5,30,20,produto para teste,06/06/2021,06/06/2021
 466,produto 467,40.25,35,22,produto para teste,06/06/2021,06/06/2021
 467,produto 468,18.4,16,49,produto para teste,06/06/2021,06/06/2021
 468,produto 469,18.4,16,40,produto para teste,06/06/2021,06/06/2021
@@ -504,4 +504,4 @@ testando multilinha:
 496,produto 497,86.25,75,87,produto para teste,06/06/2021,06/06/2021
 497,produto 498,35.65,31,8,produto para teste,06/06/2021,06/06/2021
 498,produto 499,40.25,35,50,produto para teste,06/06/2021,06/06/2021
-499,produto 500,74.75,65,39,produto para teste,06/06/2021,06/06/2021
+499,produto 500,74.75,65,35,produto para teste,06/06/2021,06/06/2021

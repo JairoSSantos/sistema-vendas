@@ -230,25 +230,30 @@ class Sales:
     def __init__(self, path):
         self.path = path
         self.filename = None
+        self.storage = Storage(STORAGE_FILENAME)
         self.update()
     
     @autosave
-    def add(self, produtos, total, pago=0, formato='dinheiro', mod=None):
+    def add(self, produtos, pago=0, formato='dinheiro', mod=0):
         '''
         Adicionar item à venda.
 
         Args:
             produtos: produtos que foram vendidos (formato: [[id do produto, quantidade], [id do produto, quantidade], ...]).
-            total: valor total da venda.
             pago: valor pago pelo cliente.
             formato: formato de venda (dinheiro, cartão de crédito, cartão de débito, ...).
-            mod: alguma alteração no valor final (desconto, acréscimo, ...)
-                |-> formato: +10%, -15%, -50%, ...
+            mod: alguma alteração no valor final (em %).
         '''
+        produtos_text = []
+        total = 0
+        for id_item, quantidade in produtos:
+            total += self.storage.get_value(id_item, 'p_venda') * quantidade
+            produtos_text.append(f'{id_item}/{quantidade}')
+        total *= 1 + mod/100
         self.dataframe = self.dataframe.append({
             'id': self.get_next_id(),
             'horario': datetime.now().strftime('%H:%M'),
-            'produtos':'-'.join(['/'.join(map(str, produto)) for produto in produtos]), 
+            'produtos': '-'.join(produtos_text), 
             'total':total, 
             'pago':pago, 
             'formato':formato,
@@ -268,11 +273,13 @@ class Sales:
             formato -> list[dict{}]
         '''
         items = []
+        value = str(value)
         if column_filter == None: column_filter = [True]*len(self.dataframe.columns)
         for i, item in self.get_dict().items():
             if not item in items:
                 for column, verify in zip(self.dataframe.columns, column_filter):
-                    if verify and str(value) in str(self.dataframe.at[i, column]):
+                    av_value = self.produtos_form(self.dataframe.at[i, column], 'str0') if column == 'produtos' else str(self.dataframe.at[i, column])
+                    if verify and value in av_value:
                         items.append(item)
                         break
         return items
@@ -315,6 +322,34 @@ class Sales:
         id_item = 0
         while id_item in self.dataframe['id'].tolist(): id_item += 1
         return id_item
+    
+    def produtos_form(self, df_produtos, utype, **kwargs):
+        '''
+        Formatar dados de produtos vendidos pelo nome do produto.
+
+        Args:
+            df_produtos: produtos no formato salvo.
+            utype: formato de saída
+                |-> str0: 'nome_1/quantidade_1-nome_2/quantidade_2-...'
+                |-> str1: 'nome_1; nome_2...'
+        '''
+        if utype == 'str0':
+            text = []
+            df_produtos = df_produtos.split('-') if '-' in df_produtos else [df_produtos]
+            for produto in df_produtos:
+                id_item, quant = produto.split('/')
+                nome = self.storage.get_value(int(id_item), 'nome')
+                text.append(f'{nome}/{quant}')
+            return '-'.join(text)
+        
+        elif utype == 'str1':
+            text = []
+            df_produtos = df_produtos.split('-') if '-' in df_produtos else [df_produtos]
+            for produto in df_produtos:
+                id_item, quant = produto.split('/')
+                nome = self.storage.get_value(int(id_item), 'nome')
+                text.append(nome)
+            return '; '.join(text)
     
     def save(self):
         '''
