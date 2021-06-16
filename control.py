@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import simpledialog
 import data
 import theme
 
@@ -45,19 +46,45 @@ class App:
         self.frames['estoque']['relatório'].pack(fill='x', pady=10)
 
         # widgets para entrada de dados do estoque
-        labels_texts = ['Código:', 'Nome:', 'Preço de venda:', 'Preço de custo:', 'Quantidade:']
-        labels_width = sorted(map(lambda a: len(a), labels_texts))[-1]
-        entrys_keys = ['id', 'nome', 'p_venda', 'p_custo', 'quantidade']
-        for i, (text, key) in enumerate(zip(labels_texts, entrys_keys)):
-            ttk.Label(self.frames['estoque']['produto'], 
-                text=text, width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w', padx=[0, 2])
-            entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
-            if key in ('p_venda', 'p_custo'): 
-                entry.insert(0, 'R$ 0,00')
-                entry.bind('<KeyRelease>', (lambda event: self.update('p_venda', event)) if key == 'p_venda' else (lambda event: self.update('p_custo', event)))
-            entry.grid(row=i, column=1, padx=[0, 10], sticky='ew')
-            self.entrys['estoque'][key] = entry
-        
+        labels_width = 15
+
+        # código
+        ttk.Label(self.frames['estoque']['produto'], text='Código:', width=labels_width, anchor='e').grid(row=0, column=0, pady=2, sticky='w', padx=[0, 2])
+        entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
+        entry.grid(row=0, column=1, padx=[0, 10], sticky='ew')
+        self.entrys['estoque']['id'] = entry
+
+        # nome
+        ttk.Label(self.frames['estoque']['produto'], text='Nome:', width=labels_width, anchor='e').grid(row=1, column=0, pady=2, sticky='w', padx=[0, 2])
+        entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
+        entry.grid(row=1, column=1, padx=[0, 10], sticky='ew')
+        self.entrys['estoque']['nome'] = entry
+
+        # preço de venda
+        ttk.Label(self.frames['estoque']['produto'], text='Preço de venda:', width=labels_width, anchor='e').grid(row=2, column=0, pady=2, sticky='w', padx=[0, 2])
+        entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
+        entry.insert(0, 'R$ 0,00')
+        entry.bind('<KeyRelease>', lambda event: self.update('p_venda', event))
+        entry.grid(row=2, column=1, padx=[0, 10], sticky='ew')
+        self.entrys['estoque']['p_venda'] = entry
+
+        # preço de custo
+        ttk.Label(self.frames['estoque']['produto'], text='Preço de custo:', width=labels_width, anchor='e').grid(row=3, column=0, pady=2, sticky='w', padx=[0, 2])
+        entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
+        entry.insert(0, 'R$ 0,00')
+        entry.bind('<KeyRelease>', lambda event: self.update('p_custo', event))
+        entry.grid(row=3, column=1, padx=[0, 10], sticky='ew')
+        self.entrys['estoque']['p_custo'] = entry
+
+        # quantidade
+        ttk.Label(self.frames['estoque']['produto'], text='Quantidade:', width=labels_width, anchor='e').grid(row=4, column=0, pady=2, sticky='w', padx=[0, 2])
+        entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
+        entry.grid(row=4, column=1, padx=[0, 10], sticky='ew')
+        entry.bind('<Double-Button-1>', lambda event: self.update('quantidade', event))
+        entry.bind('<KeyRelease>', lambda event: self.update('quantidade', event))
+        self.entrys['estoque']['quantidade'] = entry
+
+        # descrição
         ttk.Label(self.frames['estoque']['produto'], text='Descrição:', 
             width=labels_width, anchor='e').grid(row=5, column=0, sticky='nw', padx=[0, 2])
         entry = tk.Text(self.frames['estoque']['produto'], width=10, height=5, **theme.entry_style)
@@ -241,17 +268,11 @@ class App:
                 |-> 'estoque': dados do estoque
                 |-> 'vendas': dados das vendas
         '''
-        if key == 'estoque':
-            filtro = list(map(lambda a: a.get(), self.vars['filtros'][key]))
-            self.tree_update(key, data.storage.find(
-                self.entrys[key]['pesquisar'].get(), # pegar valor de entrada
-                filtro # pegar os valores variáveis das checkbox de filtragem
-            ))
-        elif key == 'vendas': pass
-            # self.tree_update(key, data.sales.get_itemslist())
-            # value = self.entrys[key]['pesquisar'].get()
-            # delete = [i for i in self.trees[key].get_children() if not value in ''.join(self.trees[key].item(i)['values'])]
-            # self.trees[key].delete(*delete)
+        filtro = list(map(lambda a: a.get(), self.vars['filtros'][key]))
+        self.tree_update(key, (data.storage if key == 'estoque' else data.sales).find(
+            self.entrys[key]['pesquisar'].get(), # pegar valor de entrada
+            filtro # pegar os valores variáveis das checkbox de filtragem
+        ))
     
     def register(self):
         '''
@@ -417,6 +438,22 @@ class App:
             self.entrys['estoque'][key].delete(0, tk.END)
             self.entrys['estoque'][key].insert(0, 'R$ ' + ''.join(val))
         
+        elif key == 'quantidade':
+            if event.type == '3': # keyrelease
+                val = self.entrys['estoque'][key].get()
+                if event.keysym != 'BackSpace': self.entrys['estoque'][key].delete(len(val)-1)
+                val = ''.join([char for char in val.lstrip('0 ') if char.isnumeric()])
+            elif event.type == '4': # double-button-1
+                val = simpledialog.askstring('+', 'Digite o valor a ser adicionado:')
+                try: val = int(val)
+                except: messagebox.showwarning('Erro', 'Formato inválido.\nVerifique se o valor foi digitado corretamente.')
+                else: 
+                    try: val_add = int(self.entrys['estoque'][key].get().lstrip('0 '))
+                    except ValueError: val_add = 0
+                    val += val_add
+            self.entrys['estoque'][key].delete(0, tk.END)
+            self.entrys['estoque'][key].insert(0, f'{val}')
+
         elif key == 'vendas': # atualizar aba de vendas em geral
             self.update('vendas_verificar_arquivos')
         

@@ -12,7 +12,8 @@ id,nome,p_venda,p_custo,quantidade,descricao,data_cadastro,data_mod
 10,produto 11,11.5,10,5,produto para teste,06/06/2021,06/06/2021
 11,produto 12,110.4,96,15,produto para teste,06/06/2021,06/06/2021
 12,produto 13,37.95,34,52,produto modificado,06/06/2021,07/06/2021
-13,produto 14,109.25,95,95,produto para teste,06/06/2021,06/06/2021
+13,produto 14,109.25,95,132,"produto para teste
+",06/06/2021,16/06/2021
 14,produto 15,90.85,79,56,produto para teste,06/06/2021,06/06/2021
 15,produto 16,89.69999999999999,78,16,produto para teste,06/06/2021,06/06/2021
 16,produto 17,113.85,99,93,produto para teste,06/06/2021,06/06/2021
@@ -147,7 +148,8 @@ testando multilinha:
 139,produto 140,9.2,8,71,produto para teste,06/06/2021,06/06/2021
 140,produto 141,86.25,75,33,produto para teste,06/06/2021,06/06/2021
 141,produto 142,62.1,54,100,produto para teste,06/06/2021,06/06/2021
-142,produto 143,6.9,6,43,produto para teste,06/06/2021,06/06/2021
+142,produto 143,6.9,6,93,"produto para teste
+",06/06/2021,16/06/2021
 143,produto 144,55.2,48,43,produto para teste,06/06/2021,06/06/2021
 144,produto 145,4.6,4,35,produto para teste,06/06/2021,06/06/2021
 145,produto 146,108.1,94,94,produto para teste,06/06/2021,06/06/2021
