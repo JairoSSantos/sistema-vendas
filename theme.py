@@ -155,7 +155,10 @@ entry_style = {
     'relief':'flat',
     'border':0,
     'highlightbackground':colors[3],
-    'highlightthickness':1
+    'highlightcolor':colors[1],
+    'highlightthickness':1,
+    'selectbackground':colors[0],
+    'selectforeground':'white'
 }
 menu_style = {
     'bg':'white',

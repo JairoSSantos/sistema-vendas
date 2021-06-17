@@ -52,12 +52,14 @@ class App:
         ttk.Label(self.frames['estoque']['produto'], text='Código:', width=labels_width, anchor='e').grid(row=0, column=0, pady=2, sticky='w', padx=[0, 2])
         entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
         entry.grid(row=0, column=1, padx=[0, 10], sticky='ew')
+        entry.bind('<Return>', lambda event: self.entrys['estoque']['nome'].focus())
         self.entrys['estoque']['id'] = entry
 
         # nome
         ttk.Label(self.frames['estoque']['produto'], text='Nome:', width=labels_width, anchor='e').grid(row=1, column=0, pady=2, sticky='w', padx=[0, 2])
         entry = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
         entry.grid(row=1, column=1, padx=[0, 10], sticky='ew')
+        entry.bind('<Return>', lambda event: self.entrys['estoque']['p_venda'].focus())
         self.entrys['estoque']['nome'] = entry
 
         # preço de venda
@@ -66,6 +68,7 @@ class App:
         entry.insert(0, 'R$ 0,00')
         entry.bind('<KeyRelease>', lambda event: self.update('p_venda', event))
         entry.grid(row=2, column=1, padx=[0, 10], sticky='ew')
+        entry.bind('<Return>', lambda event: self.entrys['estoque']['p_custo'].focus())
         self.entrys['estoque']['p_venda'] = entry
 
         # preço de custo
@@ -74,6 +77,7 @@ class App:
         entry.insert(0, 'R$ 0,00')
         entry.bind('<KeyRelease>', lambda event: self.update('p_custo', event))
         entry.grid(row=3, column=1, padx=[0, 10], sticky='ew')
+        entry.bind('<Return>', lambda event: self.entrys['estoque']['quantidade'].focus())
         self.entrys['estoque']['p_custo'] = entry
 
         # quantidade
@@ -82,6 +86,7 @@ class App:
         entry.grid(row=4, column=1, padx=[0, 10], sticky='ew')
         entry.bind('<Double-Button-1>', lambda event: self.update('quantidade', event))
         entry.bind('<KeyRelease>', lambda event: self.update('quantidade', event))
+        entry.bind('<Return>', lambda event: self.entrys['estoque']['descricao'].focus())
         self.entrys['estoque']['quantidade'] = entry
 
         # descrição
@@ -101,13 +106,13 @@ class App:
 
         # filtrar dados
         self.menu_estoque = ttk.Menubutton(self.frames['estoque']['pesquisar'], text='Filtrar')
-        self.menu_estoque.menu = tk.Menu(self.menu_estoque, tearoff=0, **theme.menu_style)
+        self.menu_estoque.menu = tk.Menu(self.menu_estoque, tearoff=1, **theme.menu_style)
         self.menu_estoque['menu'] = self.menu_estoque.menu
         self.vars['filtros']['estoque'] = []
         for key in ['código', 'Nome', 'Preço de venda', 'Preço de custo', 
             'Quantidade', 'Descrição', 'Data de cadastro', 'Data de modificação']:
             var = tk.IntVar()
-            var.set(1)
+            var.set(0)
             self.menu_estoque.menu.add_checkbutton(label=key, variable=var)
             self.vars['filtros']['estoque'].append(var)
         self.menu_estoque.grid(row=0, column=2, pady=5, padx=7)
@@ -189,12 +194,12 @@ class App:
 
         # filtrar dados
         self.menu_vendas = ttk.Menubutton(self.frames['vendas']['dados'], text='Filtrar')
-        self.menu_vendas.menu = tk.Menu(self.menu_vendas, tearoff=0, **theme.menu_style)
+        self.menu_vendas.menu = tk.Menu(self.menu_vendas, tearoff=1, **theme.menu_style)
         self.menu_vendas['menu'] = self.menu_vendas.menu
         self.vars['filtros']['vendas'] = []
         for key in ['Id', 'Horário', 'Produtos', 'Total', 'Valor pago', 'Troco', 'Formato da venda', 'Modificação']:
             var = tk.IntVar()
-            var.set(1)
+            var.set(0)
             self.menu_vendas.menu.add_checkbutton(label=key, variable=var)
             self.vars['filtros']['vendas'].append(var)
         self.menu_vendas.pack(side=tk.LEFT, padx=7, pady=5)
@@ -269,6 +274,7 @@ class App:
                 |-> 'vendas': dados das vendas
         '''
         filtro = list(map(lambda a: a.get(), self.vars['filtros'][key]))
+        if not sum(filtro): filtro = None
         self.tree_update(key, (data.storage if key == 'estoque' else data.sales).find(
             self.entrys[key]['pesquisar'].get(), # pegar valor de entrada
             filtro # pegar os valores variáveis das checkbox de filtragem
