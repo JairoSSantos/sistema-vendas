@@ -50,8 +50,8 @@ class SalePay:
     def set_paid(self, value): self.paid = value
     
 class ConfirmApp:
-    def __init__(self, toplevel, sale, mainapp):
-        self.root = toplevel
+    def __init__(self, root, sale, mainapp):
+        self.root = root
         self.root.config(bg=theme.colors[0])
         self.sale = sale
         self.mainapp = mainapp
