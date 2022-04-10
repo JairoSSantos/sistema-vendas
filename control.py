@@ -2,13 +2,16 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import simpledialog
-import data
+from datetime import date
 import theme
 
-class App:
-    def __init__(self, root):
+class ControlApp:
+    def __init__(self, root, storage, sales):
         # configurando janela principal
         self.root = root
+        self.storage = storage
+        self.sales = sales
+
         self.root.title('Controle de dados')
         self.root.state('zoomed')
 
@@ -53,14 +56,14 @@ class App:
             ('p_venda', 'Preço de venda'),
             ('p_custo', 'Preço de custo'),
             ('quantidade', 'Quantidade'),
-            ('descricao', )
+            ('descricao',)
         ]
         for i, (tag, text) in enumerate(items[:-1]):
             ttk.Label(self.frames['estoque']['produto'], text= text + ':', 
                 width=labels_width, anchor='e').grid(row=i, column=0, pady=2, sticky='w', padx=[0, 2])
             self.entrys['estoque'][tag] = tk.Entry(self.frames['estoque']['produto'], **theme.entry_style)
             self.entrys['estoque'][tag].grid(row=i, column=1, padx=[0, 10], sticky='ew')
-            self.entrys['estoque'][tag].bind('<Return>', lambda event: self.entrys['estoque'][items[i+1][0]].focus())
+            self.entrys['estoque'][tag].bind('<Return>', lambda event: self.update('estoque entrys', event))
         self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
         self.entrys['estoque']['p_venda'].bind('<KeyRelease>', lambda event: self.update('p_venda', event))
         self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
@@ -221,7 +224,7 @@ class App:
 
         # atializar as abas
         self.update('estoque')
-        self.update('vendas')
+        #self.update('vendas')
     
     def delete(self):
         '''
@@ -230,11 +233,11 @@ class App:
         if self.vars['button excluir'].get() == 'Excluir':
             try: 
                 item = self.trees['estoque'].item(self.trees['estoque'].focus())
-                id_item = int(item['text'])
+                id_item = int(item['values'][0])
             except ValueError: messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
             else: 
-                if messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][0])):
-                    data.storage.delete(id_item)
+                if messagebox.askokcancel('Excluir produto', 'Deseja excluir {} - {}?'.format(*item['values'][:2])):
+                    self.storage.delete(id_item)
         
         elif self.vars['button excluir'].get() == 'Cancelar':
             for item in self.entrys['estoque'].values(): 
@@ -247,7 +250,7 @@ class App:
 
         self.update('estoque')
     
-    def find(self, key:str):
+    def find(self, key):
         '''
         Pesquisar nos dados o valor da entrada.
 
@@ -256,12 +259,14 @@ class App:
                 |-> 'estoque': dados do estoque
                 |-> 'vendas': dados das vendas
         '''
-        filtro = list(map(lambda a: a.get(), self.vars['filtros'][key]))
-        if not sum(filtro): filtro = None
-        self.tree_update(key, (data.storage if key == 'estoque' else data.sales).find(
-            self.entrys[key]['pesquisar'].get(), # pegar valor de entrada
-            filtro # pegar os valores variáveis das checkbox de filtragem
-        ))
+        try:
+            filtro = list(map(lambda a: a.get(), self.vars['filtros'][key]))
+            if not sum(filtro): filtro = None
+            self.tree_update(key, (self.storage if key == 'estoque' else self.sales).find(
+                self.entrys[key]['pesquisar'].get(), # pegar valor de entrada
+                filtro # pegar os valores variáveis das checkbox de filtragem
+            ))
+        except Exception as error: messagebox.showerror('Erro!', error)
     
     def register(self):
         '''
@@ -273,22 +278,34 @@ class App:
             p_venda = float(self.entrys['estoque']['p_venda'].get().lstrip('R$').replace(',', '.'))
             p_custo = float(self.entrys['estoque']['p_custo'].get().lstrip('R$').replace(',', '.'))
             quantidade = self.entrys['estoque']['quantidade'].get()
-            if quantidade == '': quantidade = 0
             descricao = str(self.entrys['estoque']['descricao'].get('0.0', tk.END))
-        except ValueError: messagebox.showwarning('Erro ao cadastrar produto!', 'Preencha os campos corretamente.')
+            quantidade = 0 if quantidade == '' else int(quantidade)
+        except ValueError: messagebox.showerror('Erro ao cadastrar produto!', 'Preencha os campos corretamente.')
         else:
             if self.vars['button cadastrar'].get() == 'Cadastrar':
-                try: data.storage.add(id_item, nome, p_venda, p_custo, quantidade, descricao)
-                except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
+                try:
+                    today = date.today().strftime('%Y-%m-%d')
+                    self.storage.insert_into(
+                        id=id_item, 
+                        nome=nome, 
+                        p_venda=p_venda, 
+                        p_custo=p_custo, 
+                        quantidade=quantidade, 
+                        descricao=descricao,
+                        data_cad=today,
+                        data_mod=today
+                    )
+                except Exception as error: 
+                    messagebox.showerror('Erro ao cadastrar produto!', error)
                 else:
                     for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
                     self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
                     self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
         
             elif self.vars['button cadastrar'].get() == 'Modificar':
-                try: data.storage.modify(self.vars['produto selecionado'], {'id':id_item, 'nome':nome, 
+                try: self.storage.modify(self.vars['produto selecionado'], {'id':id_item, 'nome':nome, 
                         'p_venda':p_venda, 'p_custo':p_custo, 'quantidade':quantidade, 'descricao':descricao})
-                except Exception as error: messagebox.showwarning('Erro ao cadastrar produto!', error)
+                except Exception as error: messagebox.showerror('Erro ao cadastrar produto!', error)
                 else:
                     for item in self.entrys['estoque'].values(): 
                         try: item.delete(0, tk.END)
@@ -299,7 +316,7 @@ class App:
             
             self.update('estoque')
     
-    def tree_update(self, key:str, items:list):
+    def tree_update(self, key, items):
         '''
         Atualizar treeview.
         
@@ -311,24 +328,27 @@ class App:
         '''
         if key == 'estoque':
             self.trees[key].delete(*self.trees[key].get_children())
-            cont = 0
             for i, item in enumerate(items):
-                codigo, nome, p_venda, p_custo, quant = list(item.values())[:5]
-                codigo = str(codigo)
-                while len(codigo) < 5: codigo = '0'+codigo
-                self.trees[key].insert('', 'end', text=i, values=[codigo, nome,
-                    f'R$ {p_venda:.2f}'.replace('.', ','), f'R$ {p_custo:.2f}'.replace('.', ','), f'{quant} Un'], 
-                    tags=int((i+2)%2 == 0))
-                cont = i
-            if len(items) < 30:
-                for j in range(30-len(items)):
-                    self.trees[key].insert('', 'end', text='', values=['']*5, tags=int((cont+j+1)%2 == 0))
+                id_item, nome, p_venda, p_custo, quantidade, _, _, _ = item
+                id_item = str(id_item)
+                while len(id_item) < 5: id_item = '0' + id_item
+                self.trees[key].insert('', 'end', values=[
+                        id_item, 
+                        nome,
+                        f'R$ {p_venda:.2f}'.replace('.', ','), 
+                        f'R$ {p_custo:.2f}'.replace('.', ','), 
+                        f'{quantidade} Un'
+                    ], tags=int((i+2)%2 == 0)
+                )
+            len_items = len(items)
+            if len_items < 30:
+                for j in range(30 - len_items):
+                    self.trees[key].insert('', 'end', values=['']*5, tags=int((len_items + j)%2 == 0))
 
         elif key == 'vendas':
             self.trees[key].delete(*self.trees[key].get_children())
-            cont = 0
             for i, item in enumerate(items):
-                index, horario, produtos, total, pago, formato, mod = list(item.values())
+                index, horario, produtos, total, pago, formato, mod = item
                 text = []
                 produtos = produtos.split('-') if '-' in produtos else [produtos]
                 for produto in produtos:
@@ -347,11 +367,11 @@ class App:
                     f'R$ {pago:.2f}'.replace('.', ','), 
                     f'R$ {(pago-total):.2f}'.replace('.', ','),
                     formato],  
-                    tags=int((i+2)%2 == 0))
-                cont = i
-            if len(items) < 30:
-                for j in range(30-len(items)):
-                    self.trees[key].insert('', 'end', text='', values=['']*6, tags=int((cont+j+1)%2 == 0))
+                    tags=int((i + 2)%2 == 0))
+            len_items = len(items)
+            if len_items < 30:
+                for j in range(30 - len_items):
+                    self.trees[key].insert('', 'end', text='', values=['']*6, tags=int((len_items + j)%2 == 0))
 
         self.root.update()
     
@@ -370,10 +390,12 @@ class App:
         '''
         match key:
             case 'estoque': # atualizar a aba de estoque em geral
-                self.tree_update(key, data.storage.get_itemslist())
-                self.vars['n cadastros'].set(f'Produtos cadastrados: {data.storage.get_size()}')
+                items = self.storage.get()
+                next_id = str(self.storage.get_next_id()[0][0])
+                self.tree_update(key, items)
+                self.vars['n cadastros'].set(f'Produtos cadastrados: {len(items)}')
                 self.entrys['estoque']['id'].delete(0, tk.END)
-                self.entrys['estoque']['id'].insert(0, str(data.storage.generate_id()))
+                self.entrys['estoque']['id'].insert(0, '0'*(5 - len(next_id)) + next_id)
                 self.entrys['estoque']['p_venda'].delete(0, tk.END)
                 self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
                 self.entrys['estoque']['p_custo'].delete(0, tk.END)
@@ -384,7 +406,7 @@ class App:
                 except ValueError: pass
                 else:
                     self.vars['produto selecionado'] = id_item
-                    codigo, nome, p_venda, p_custo, quant, desc = data.storage.get_item(id_item)[:6]
+                    codigo, nome, p_venda, p_custo, quant, desc = self.storage.get(where=f'id = {id_item}')[0][:6]
                     for entry in self.entrys['estoque'].values(): 
                         try: entry.delete(0, tk.END)
                         except: entry.delete('0.0', tk.END)
@@ -403,8 +425,9 @@ class App:
                     id_item = int(item['values'][0])
                 except ValueError: pass
                 else:
-                    codigo, nome, p_venda, p_custo, quant, desc, cad, mod = data.storage.get_item(id_item)
-                    while len(str(codigo)) < 5: codigo = '0'+str(codigo)
+                    codigo, nome, p_venda, p_custo, quant, desc, cad, mod = self.storage.get(where=f'id = {id_item}')[0]
+                    codigo, desc = str(codigo), str(desc)
+                    while len(str(codigo)) < 5: codigo = '0' + codigo
                     fal_rows = 10 - len(desc.split('\n'))
                     text = '\n'.join([
                         f'Código: {codigo}',
@@ -443,6 +466,13 @@ class App:
                         val += val_add
                 self.entrys['estoque'][key].delete(0, tk.END)
                 self.entrys['estoque'][key].insert(0, f'{val}')
+            
+            case 'estoque entrys':
+                self.entrys['estoque'][
+                    list(self.entrys['estoque'].keys())[
+                        list(self.entrys['estoque'].values()).index(event.widget) + 1
+                    ]
+                ].focus()
 
             case 'vendas': # atualizar aba de vendas em geral
                 self.update('vendas_verificar_arquivos')
@@ -490,9 +520,3 @@ class App:
                     self.tree_update('vendas', data.sales.get_itemslist())
 
         self.root.update()
-
-if __name__ == '__main__':
-    data.init()
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()
