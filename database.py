@@ -72,6 +72,7 @@ def create_table(table_name:str) -> str:
                 'total decimal(7, 2),'
                 'pago decimal(7, 2),'
                 'extra text,'
+                'formato enum("dinheiro", "crédito", "débito"),'
                 'primary key (id)'
                 ') default charset = utf8'
             )
@@ -94,13 +95,6 @@ class Table:
         return f'delete from sistema_vendas.{self.name} where id = {index}'
 
     @DQL
-    def get(self, where:str=None) -> str:
-        return (
-            f'select * from sistema_vendas.{self.name}'
-            + (f' where {where}' if where else '')
-        )
-
-    @DQL
     def get_next_id(self) -> str:
         return (
             'select auto_increment '
@@ -108,10 +102,7 @@ class Table:
             'where table_schema = "sistema_vendas" '
             f'and table_name = "{self.name}"'
         )
-
-    @DML
-    def modify(self): pass
-
+    
     @DML
     def insert_into(self, **kwargs) -> str:
         return 'insert into sistema_vendas.{name} ({keys}) values ({values})'.format(
@@ -119,6 +110,9 @@ class Table:
             keys= ','.join(kwargs.keys()),
             values= ','.join(map(lambda x: f'"{x}"', kwargs.values()))
         )
+
+    @DML
+    def modify(self): pass
     
     @DQL
     def search(self, value, filter_cols:str, cols:str='*') -> str:
@@ -127,4 +121,12 @@ class Table:
             f'AGAINST ({value}) AS relevance '
             f'WHERE MATCH({filter_cols}) '
             f'AGAINST {value} ORDER BY relevance DESC LIMIT 0,10'
+        )
+    
+    @DQL
+    def select(self, cols:str='*', where:str=None, like:str=None) -> str:
+        return (
+            f'select {cols} from sistema_vendas.{self.name}'
+            + (f' where {where}' if where else '')
+            + (f' like {like}' if like else '')
         )

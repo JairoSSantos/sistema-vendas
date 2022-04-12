@@ -1,62 +1,16 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox, simpledialog
-import data
+from database import Table
 import theme
-
-class SalePay:
-    def __init__(self):
-        self.items = []
-        self.total = 0
-        self.paid = 0
-        self.mod = 0
-
-        self.ID = str(data.sales.get_next_id())
-        while len(self.ID) < 5: self.ID = '0'+self.ID
-
-    def add(self, codigo, unidades, nome, preco):
-        '''
-        Adicionar produto à venda.
-        
-        Args:
-            codigo: int; código do produto.
-            unidades: int; quantidade vendida.
-            nome: string; nome do produto.
-            preco: float; preço do produto.
-        '''
-        self.total += preco*unidades
-        self.items.append([codigo, unidades, nome, preco, preco*unidades])
-    
-    def confirm(self, form): 
-        '''
-        Confirmar venda.
-        '''
-        stuff = [] 
-        for id_item, un, name, p_venda, total in self.items:
-            stuff.append([int(id_item), int(un)])
-            data.storage.decrease(int(id_item), int(un)) # retirar do estoque
-        data.sales.add(stuff, self.paid, form, self.mod)
-    
-    def get_change(self):
-        return self.paid - self.total
-
-    def new(self):
-        self.__init__()
-    
-    def set_mod(self, value): 
-        self.mod += value
-        self.total *= 1 + self.mod/100
-
-    def set_paid(self, value): self.paid = value
     
 class ConfirmApp:
-    def __init__(self, root, sale, mainapp):
+    def __init__(self, root, mainapp):
         self.root = root
         self.root.config(bg=theme.colors[0])
-        self.sale = sale
         self.mainapp = mainapp
 
-        tk.Label(self.root, text=f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}', 
+        tk.Label(self.root, text='ID: *  Data: *', 
             font=theme.fonts[5], bg=theme.colors[5], fg='white').pack(fill='x')
 
         labelstyle = {'font':theme.fonts[7], 'bg':theme.colors[0], 'fg':'white'}
@@ -90,13 +44,10 @@ class ConfirmApp:
     
     def end(self, key):
         if key == 'cancel' and messagebox.showwarning('Cancelar venda', 'Deseja iniciar nova venda?'):
-            self.sale.new()
+            pass
         elif key == 'confirm':
-            self.sale.confirm(self.form.get().split(':')[-1].strip(' ').lower())
-            self.sale.new()
-        self.root.destroy()
-        self.root.update()
-        self.mainapp.vars['arquivo info'].set(f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}')
+            pass
+        self.mainapp.vars['arquivo info'].set('ID: *  Data: *')
         self.mainapp.vars['produto info'].set('')
         self.mainapp.update()
     
@@ -122,8 +73,7 @@ class ConfirmApp:
             dec.insert(-2, ',') # adicione a vísgula para as casas decimais
             dec = ''.join(map(str, dec)) # juntar em texto
             self.val_recebido.set(f'Valor recebido: R$ {dec}') # mudar valor na interface
-            self.sale.set_paid(float(dec.replace(',', '.'))) # definir valor pago
-            self.troco.set(f'Troco: R$ {self.sale.get_change():.2f}'.replace('.', ',')) # mostrar troco na interface
+            self.troco.set('Troco: R$ *') # mostrar troco na interface
     
     def set_mod(self, event=None):
         try:
@@ -133,25 +83,28 @@ class ConfirmApp:
             messagebox.showwarning('Formato inválido', 'Formato inválido!\nDigite o valor corretamente!', parent=self.root)
             self.set_mod(event)
         else:
-            self.sale.set_mod(-value)
-            self.val_total.set(f'Total: R$ {self.sale.total:.2f}')
-            self.troco.set(f'Troco: R$ {self.sale.get_change():.2f}'.replace('.', ',')) # mostrar troco na interface
+            self.val_total.set('Total: R$ *')
+            self.troco.set('Troco: R$ *') # mostrar troco na interface
             self.root.update()
 
-class App:
-    def __init__(self, root):
-        self.sale = SalePay()
+class CashierApp(ttk.Frame):
+    def __init__(self, storage:Table, sales:Table, purchase:Table, master=None):
+        super().__init__(master)
+        self.pack()
+
+        self.storage = storage
+        self.sales = sales
+        self.purchase = purchase
 
         # configurar janela
-        self.root = root
-        self.root.title('Caixa')
-        self.root.state('zoomed')
-        self.root.config(background='white')
+        self.master.title('Caixa')
+        self.master.state('zoomed')
+        self.master.config(background='white')
 
         # definir estilo da aplicação
         self.style = ttk.Style()
-        self.style.theme_create('MyTheme', parent='alt', settings=theme.settings_cashier)
-        self.style.theme_use('MyTheme')
+        self.style.theme_create('CashierTheme', parent='alt', settings=theme.settings_cashier)
+        self.style.theme_use('CashierTheme')
         self.style.layout('Treeview', theme.treeview_layout)
         self.style.layout('Vertical.TScrollbar', theme.vertical_scrollbar_layout)
         self.style.layout('TCombobox', theme.combobox_layout)
@@ -159,7 +112,7 @@ class App:
         self.frames = {}
         self.vars = {}
 
-        self.frames['info'] = tk.Frame(self.root, bg=theme.colors[3])
+        self.frames['info'] = tk.Frame(self, bg=theme.colors[3])
         self.frames['info'].pack(fill='x', padx=20, pady=[5, 10])
 
         self.frames['info 1'] = tk.Frame(self.frames['info'], bg=theme.colors[3])
@@ -175,13 +128,11 @@ class App:
             font=theme.fonts[6], **theme.labelinfo_style).pack(fill='x', padx=10, pady=[5,10])
 
         self.vars['arquivo info'] = tk.StringVar()
-        ID = str(data.sales.get_next_id())
-        while len(ID) < 5: ID = '0'+ID
-        self.vars['arquivo info'].set(f'ID: {self.sale.ID}  Data: {data.sales.get_current_date()}')
+        self.vars['arquivo info'].set(f'ID: *  Data: *')
         tk.Label(self.frames['info'], textvariable=self.vars['arquivo info'],
             font=theme.fonts[5], **theme.labelinfo_style).pack(anchor='ne', padx=5, pady=5)
 
-        self.frames['produtos'] = ttk.Frame(self.root)
+        self.frames['produtos'] = ttk.Frame(self)
         self.frames['produtos'].pack()
 
         columns = {
@@ -207,7 +158,7 @@ class App:
         self.scrollbar.config(command=self.tree.yview)
         self.tree.pack()
 
-        self.frames['control'] = ttk.Frame(self.root)
+        self.frames['control'] = ttk.Frame(self)
         self.frames['control'].pack(fill='x', padx=20, pady=10)
 
         ttk.Label(self.frames['control'], text='Código do produto:').pack(side=tk.LEFT)
@@ -218,19 +169,19 @@ class App:
         ttk.Button(self.frames['control'], text='Confirmar', command=self.confirm).pack(side=tk.RIGHT, padx=5)
         ttk.Button(self.frames['control'], text='Cancelar', command=self.cancel).pack(side=tk.RIGHT, padx=5)
 
-        self.root.bind('<F2>', self.confirm)
-        self.root.bind('<Escape>', self.cancel)
+        self.bind('<F2>', self.confirm)
+        self.bind('<Escape>', self.cancel)
 
         self.update()
     
     def cancel(self, event=None):
-        self.sale.new()
+        # self.sale.new()
         self.update()
 
     def confirm(self, event=None):
         toplevel = tk.Toplevel()
         toplevel.focus_force()
-        ConfirmApp(toplevel, self.sale, self)
+        ConfirmApp(toplevel, self)
 
     def delete(self, event):
         item = self.tree.item(self.tree.focus())
@@ -238,7 +189,7 @@ class App:
         except ValueError: messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
         else:
             if messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][1])):
-                self.sale.items.pop(index)
+                pass
         finally: self.update()
     
     def update(self):
@@ -255,7 +206,7 @@ class App:
             cont -= 1
         self.vars['total'].set(f'Total: R$ {self.sale.total:.2f}'.replace('.', ','))
         self.entry_codigo.focus()
-        self.root.update()
+        
     
     def verify_code(self, event):
         value = self.entry_codigo.get()
@@ -269,10 +220,3 @@ class App:
                 while len(str(value)) < 5: value = '0'+str(value)
                 self.vars['produto info'].set(f'{value};  {un};  {nome};  R$ {p_venda:.2f};  R$ {(p_venda*un):.2f}'.replace('.', ','))
         finally: self.entry_codigo.delete(0, tk.END); self.update()
-
-if __name__ == '__main__':
-    data.init()
-    data.sales.set_current_file()
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()

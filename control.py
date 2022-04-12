@@ -3,28 +3,29 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import simpledialog
 from datetime import date
+from database import Table
 import theme
 
-class ControlApp:
-    def __init__(self, root, storage, sales):
+class ControlApp(tk.Frame):
+    def __init__(self, storage:Table, sales:Table, master:tk.Frame=None) -> None:
         # configurando janela principal
-        self.root = root
+        super().__init__(master)
+        self.pack()
+        self.master.title('Controle de dados')
+        self.master.state('zoomed')
+
         self.storage = storage
         self.sales = sales
 
-        self.root.title('Controle de dados')
-        self.root.state('zoomed')
-
         # definir estilo da aplicação
         self.style = ttk.Style()
-        self.style.theme_create('MyTheme', parent='alt', settings=theme.settings_main)
         self.style.theme_use('MyTheme')
         self.style.layout('Treeview', theme.treeview_layout)
         self.style.layout('Vertical.TScrollbar', theme.vertical_scrollbar_layout)
         self.style.layout('TCombobox', theme.combobox_layout)
 
         # definir frame principal
-        self.notebook_main = ttk.Notebook(self.root)
+        self.notebook_main = ttk.Notebook(self)
 
         self.frames = {} # frames
         self.vars = {'filtros':{'estoque':[], 'vendas':[]}} # variáveis
@@ -105,7 +106,7 @@ class ControlApp:
 
         #definir widgets para visualizar detalhes do produto
         self.vars['detalhes'] = tk.StringVar()
-        self.vars['detalhes'].set('\n'*17)
+        self.vars['detalhes'].set('\n'*16)
         ttk.Label(self.frames['estoque']['detalhes'], width=35, #height=12, 
             textvariable=self.vars['detalhes'], justify=tk.LEFT, anchor='w').pack()
 
@@ -124,7 +125,7 @@ class ControlApp:
             ('Quantidade', 100)
         ]
         self.scrollbar_estoque = ttk.Scrollbar(self.frames['estoque']['tree'], orient='vertical')
-        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['tree'], columns=list(map(lambda a: a[0], columns)), height=30)
+        self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['tree'], columns=list(map(lambda a: a[0], columns)), height=29)
         self.trees['estoque'].column('#0', width=50)
         for key, width in columns:
             self.trees['estoque'].column(key, width=width, anchor='center')
@@ -193,10 +194,10 @@ class ControlApp:
         # definir treeview das vendas
         columns = [
             ('Horário', 80),
-            ('Produtos', 320),
             ('Total', 150),
             ('Valor pago', 150),
             ('Troco', 150),
+            ('Extra', 200),
             ('Formato de pagamento', 200)
         ]
         self.scrollbar_vendas = ttk.Scrollbar(self.frames['vendas']['tree'], orient='vertical')
@@ -206,7 +207,6 @@ class ControlApp:
         for i, (key, width) in enumerate(columns):
             self.trees['vendas'].column(key, width=width, anchor='center')
             self.trees['vendas'].heading(key, text=key)
-        self.trees['vendas'].column('Produtos', anchor='w')
         self.trees['vendas'].tag_configure(0, background=theme.colors[4])
         self.trees['vendas'].tag_configure(1, background='white')
         self.trees['vendas'].configure(yscroll=self.scrollbar_vendas.set)
@@ -298,7 +298,11 @@ class ControlApp:
                 except Exception as error: 
                     messagebox.showerror('Erro ao cadastrar produto!', error)
                 else:
-                    for item in self.entrys['estoque'].values(): item.delete(0, tk.END)
+                    for item in self.entrys['estoque'].values():
+                        try: item.delete(0, tk.END)
+                        except: 
+                            try: item.delete('1.0', tk.END)
+                            except: pass
                     self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
                     self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
         
@@ -348,32 +352,22 @@ class ControlApp:
         elif key == 'vendas':
             self.trees[key].delete(*self.trees[key].get_children())
             for i, item in enumerate(items):
-                index, horario, produtos, total, pago, formato, mod = item
-                text = []
-                produtos = produtos.split('-') if '-' in produtos else [produtos]
-                for produto in produtos:
-                    id_item, quant = produto.split('/')
-                    nome = data.storage.get_value(int(id_item), 'nome')
-                    if len(text) > 3: 
-                        text.append('...')
-                        break
-                    else: text.append(nome)
-                text = ', '.join(text)
-                index = str(index)
-                while len(index) < 5: index = '0'+index
+                id_item, horario, total, pago, extra, formato = item
+                id_item = str(id_item)
+                while len(id_item) < 5: id_item = '0'+id_item
                 if not pago: pago = total
-                self.trees[key].insert('', 'end', text=index, values=[horario, text, 
+                self.trees[key].insert('', 'end', text=id_item, values=[
+                    horario, 
                     f'R$ {total:.2f}'.replace('.', ','), 
                     f'R$ {pago:.2f}'.replace('.', ','), 
                     f'R$ {(pago-total):.2f}'.replace('.', ','),
-                    formato],  
-                    tags=int((i + 2)%2 == 0))
+                    extra,
+                    formato
+                ], tags=int((i + 2)%2 == 0))
             len_items = len(items)
             if len_items < 30:
                 for j in range(30 - len_items):
                     self.trees[key].insert('', 'end', text='', values=['']*6, tags=int((len_items + j)%2 == 0))
-
-        self.root.update()
     
     def update(self, key, event=None):
         '''
@@ -390,7 +384,7 @@ class ControlApp:
         '''
         match key:
             case 'estoque': # atualizar a aba de estoque em geral
-                items = self.storage.get()
+                items = self.storage.select()
                 next_id = str(self.storage.get_next_id()[0][0])
                 self.tree_update(key, items)
                 self.vars['n cadastros'].set(f'Produtos cadastrados: {len(items)}')
@@ -425,7 +419,7 @@ class ControlApp:
                     id_item = int(item['values'][0])
                 except ValueError: pass
                 else:
-                    codigo, nome, p_venda, p_custo, quant, desc, cad, mod = self.storage.get(where=f'id = {id_item}')[0]
+                    codigo, nome, p_venda, p_custo, quant, desc, cad, mod = self.storage.select(where=f'id = {id_item}')[0]
                     codigo, desc = str(codigo), str(desc)
                     while len(str(codigo)) < 5: codigo = '0' + codigo
                     fal_rows = 10 - len(desc.split('\n'))
@@ -479,8 +473,8 @@ class ControlApp:
         
             case 'vendas_verificar_arquivos': # atualizar arquivos de vendas
                 dates = {}
-                for filename in data.sales.get_files():
-                    year, month, day = filename.rstrip('.csv').split('-')
+                for item in self.sales.select(cols='horario').split(' ')[0].split('-'):
+                    year, month, day = item[0]
                     if year in dates.keys():
                         if month in dates[year].keys(): dates[year][month].append(day)
                         else: dates[year][month] = [day]
@@ -516,7 +510,4 @@ class ControlApp:
                 if day == '--':
                     pass
                 else:
-                    data.sales.set_file(f'{year}-{month}-{day}.csv')
-                    self.tree_update('vendas', data.sales.get_itemslist())
-
-        self.root.update()
+                    self.tree_update('vendas', self.sales.select(like=f'horario = {year}-{month}-{day}%'))
