@@ -7,7 +7,7 @@ from database import Table
 import theme
 
 class ControlApp(tk.Frame):
-    def __init__(self, storage:Table, sales:Table, master:tk.Frame=None) -> None:
+    def __init__(self, storage:Table, sales:Table, purchase:Table, master:tk.Frame=None) -> None:
         # configurando janela principal
         super().__init__(master)
         self.pack()
@@ -16,6 +16,7 @@ class ControlApp(tk.Frame):
 
         self.storage = storage
         self.sales = sales
+        self.purchase = purchase
 
         # definir estilo da aplicação
         self.style = ttk.Style()

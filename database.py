@@ -40,11 +40,11 @@ def create_table(table_name:str) -> str:
         case 'compras':
             return (
                 'create table if not exists sistema_vendas.compras ('
-                'id_vendas int not null,'
+                'id_venda int not null,'
                 'id_produto int not null,'
-                'quantidade mediumint,'
-                'extra text,'
-                'foreign key (id_vendas) references sistema_vendas.vendas(id),'
+                'quantidade mediumint not null,'
+                'extra decimal(7, 2) default 0,'
+                'foreign key (id_venda) references sistema_vendas.vendas(id),'
                 'foreign key (id_produto) references sistema_vendas.produtos(id)'
                 ') default charset = utf8'
             )
@@ -71,7 +71,7 @@ def create_table(table_name:str) -> str:
                 'horario datetime,'
                 'total decimal(7, 2),'
                 'pago decimal(7, 2),'
-                'extra text,'
+                'extra decimal(7, 2) default 0,'
                 'formato enum("dinheiro", "crédito", "débito"),'
                 'primary key (id)'
                 ') default charset = utf8'
@@ -103,6 +103,10 @@ class Table:
             f'and table_name = "{self.name}"'
         )
     
+    @DQL
+    def get_last_id(self) -> str:
+        return 'select last_insert_id()'
+    
     @DML
     def insert_into(self, **kwargs) -> str:
         return 'insert into sistema_vendas.{name} ({keys}) values ({values})'.format(
@@ -113,15 +117,6 @@ class Table:
 
     @DML
     def modify(self): pass
-    
-    @DQL
-    def search(self, value, filter_cols:str, cols:str='*') -> str:
-        return (
-            f'SELECT {cols} MATCH({filter_cols}) '
-            f'AGAINST ({value}) AS relevance '
-            f'WHERE MATCH({filter_cols}) '
-            f'AGAINST {value} ORDER BY relevance DESC LIMIT 0,10'
-        )
     
     @DQL
     def select(self, cols:str='*', where:str=None, like:str=None) -> str:

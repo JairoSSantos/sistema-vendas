@@ -96,6 +96,9 @@ class CashierApp(ttk.Frame):
         self.sales = sales
         self.purchase = purchase
 
+        self.ID = None # estado inicial do caixa
+        self.cashier = [] # armazena os produtos da venda [(id, quantidade, extra), ...]
+
         # configurar janela
         self.master.title('Caixa')
         self.master.state('zoomed')
@@ -112,37 +115,17 @@ class CashierApp(ttk.Frame):
         self.frames = {}
         self.vars = {}
 
-        self.frames['info'] = tk.Frame(self, bg=theme.colors[3])
-        self.frames['info'].pack(fill='x', padx=20, pady=[5, 10])
-
-        self.frames['info 1'] = tk.Frame(self.frames['info'], bg=theme.colors[3])
-        self.frames['info 1'].pack(fill='y', side=tk.LEFT)
-
-        self.vars['total'] = tk.StringVar()
-        self.vars['total'].set('Total: 0,00 R$')
-        tk.Label(self.frames['info 1'], textvariable=self.vars['total'], anchor='w',
-            font=theme.fonts[4], **theme.labelinfo_style).pack(fill='x', padx=10, pady=[10,5])
-
-        self.vars['produto info'] = tk.StringVar()
-        tk.Label(self.frames['info 1'], textvariable=self.vars['produto info'], anchor='w',
-            font=theme.fonts[6], **theme.labelinfo_style).pack(fill='x', padx=10, pady=[5,10])
-
-        self.vars['arquivo info'] = tk.StringVar()
-        self.vars['arquivo info'].set(f'ID: *  Data: *')
-        tk.Label(self.frames['info'], textvariable=self.vars['arquivo info'],
-            font=theme.fonts[5], **theme.labelinfo_style).pack(anchor='ne', padx=5, pady=5)
-
         self.frames['produtos'] = ttk.Frame(self)
-        self.frames['produtos'].pack()
+        self.frames['produtos'].grid(row=1, column=1)
 
         columns = {
-            'Código':170,
+            'Código':100,
+            'Nome do produto':250,
             'Unidades':100,
-            'Nome do produto':400,
-            'Preço unitário':250,
-            'Preço total':250
+            'Preço unitário':150,
+            'Preço total':150,
+            'Extra':150
         }
-
         self.scrollbar = ttk.Scrollbar(self.frames['produtos'], orient='vertical')
         self.scrollbar.pack(side=tk.RIGHT, fill='y')
         self.tree = ttk.Treeview(self.frames['produtos'], columns=list(columns.keys()), height=17)
@@ -159,24 +142,43 @@ class CashierApp(ttk.Frame):
         self.tree.pack()
 
         self.frames['control'] = ttk.Frame(self)
-        self.frames['control'].pack(fill='x', padx=20, pady=10)
-
+        self.frames['control'].grid(row=2, column=1, sticky='we', pady=10)
         ttk.Label(self.frames['control'], text='Código do produto:').pack(side=tk.LEFT)
         self.entry_codigo = tk.Entry(self.frames['control'], width=70, **theme.entry_style)
-        self.entry_codigo.bind('<Return>', self.verify_code)
+        self.entry_codigo.bind('<Return>', self.check_code)
         self.entry_codigo.focus_force()
         self.entry_codigo.pack(side=tk.LEFT, padx=5)
-        ttk.Button(self.frames['control'], text='Confirmar', command=self.confirm).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(self.frames['control'], text='Cancelar', command=self.cancel).pack(side=tk.RIGHT, padx=5)
+
+        self.frames['info'] = tk.Frame(self, bg=theme.colors[3])
+        self.frames['info'].grid(row=1, column=2, rowspan=2, sticky='ns')
+
+        self.vars['venda info'] = tk.StringVar()
+        tk.Label(self.frames['info'], textvariable=self.vars['venda info'], height=2,
+            font=theme.fonts[5], **theme.labelinfo_style).grid(row=1, column=1, columnspan=2, padx=5, pady=5)
+
+        self.vars['total'] = tk.StringVar(value='Total: R$ 0,00')
+        tk.Label(self.frames['info'], textvariable=self.vars['total'], anchor='w', width=15,
+            font=theme.fonts[4], **theme.labelinfo_style).grid(row=2, column=1, columnspan=2, sticky='w', padx=10, pady=10)
+
+        self.vars['produto info'] = tk.StringVar()
+        tk.Label(self.frames['info'], textvariable=self.vars['produto info'], justify=tk.LEFT, height=7,
+            font=theme.fonts[6], **theme.labelinfo_style).grid(row=3, column=1, columnspan=2, sticky='ws', padx=10, pady=20)
+
+        ttk.Button(self.frames['info'], text='Confirmar (F2)', command=self.confirm).grid(row=4, column=1)
+        ttk.Button(self.frames['info'], text='Cancelar (Esc)', command=self.cancel).grid(row=4, column=2)
 
         self.bind('<F2>', self.confirm)
         self.bind('<Escape>', self.cancel)
 
-        self.update()
+        self.update_tree()
     
     def cancel(self, event=None):
-        # self.sale.new()
-        self.update()
+        self.Id = None
+        self.cashier = []
+        self.update_tree()
+        self.vars['venda info'].set('')
+        self.vars['total'].set('Total: R$ 0,00')
+        self.vars['produto info'].set('')
 
     def confirm(self, event=None):
         toplevel = tk.Toplevel()
@@ -189,34 +191,50 @@ class CashierApp(ttk.Frame):
         except ValueError: messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
         else:
             if messagebox.askokcancel('Excluir produto.', 'Deseja excluir {}?'.format(item['values'][1])):
-                pass
-        finally: self.update()
+                self.cashier.drop(index)
+                self.update_tree()
     
-    def update(self):
-        self.tree.delete(*self.tree.get_children())
-        cont = 17
-        for i, item in enumerate(self.sale.items):
-            codigo, unidades, nome, p_venda, total = item
-            while len(str(codigo)) < 5: codigo = '0' + str(codigo)
-            self.tree.insert('', 'end', text=i, values=[codigo, unidades, nome, 
-                f'R$ {p_venda:.2f}'.replace('.', ','), f'R$ {total:.2f}'.replace('.', ',')], tags=not (cont)%2)
-            cont -= 1
-        while cont >= 0:
-            self.tree.insert('', 'end', text='', values=['']*5, tags=not (cont)%2)
-            cont -= 1
-        self.vars['total'].set(f'Total: R$ {self.sale.total:.2f}'.replace('.', ','))
-        self.entry_codigo.focus()
-        
-    
-    def verify_code(self, event):
+    def check_code(self, event=None):
         value = self.entry_codigo.get()
-        try: un, value = map(int, value.split('x')) if 'x' in value else [1, int(value)]
-        except ValueError: messagebox.showwarning('Formáto inválido.', 'Erro no formato do código.\nDigite corretamente.')
+
+        if self.ID == None:
+            self.ID, = self.sales.get_next_id()[0]
+            self.vars['venda info'].set(f'Caixa Aberto\nID: {self.ID}')
+        
+        try: un, id_item = map(int, value.split('x')) if 'x' in value else [1, int(value)]
+        except ValueError: messagebox.showerror('Formáto inválido.', 'Erro no formato do código.\nDigite corretamente.')
         else:
-            try: nome, p_venda = data.storage.get_value(value, 'nome', 'p_venda')
-            except Exception as error: messagebox.showwarning('Erro no código.', error)
-            else: 
-                self.sale.add(value, un, nome, p_venda)
-                while len(str(value)) < 5: value = '0'+str(value)
-                self.vars['produto info'].set(f'{value};  {un};  {nome};  R$ {p_venda:.2f};  R$ {(p_venda*un):.2f}'.replace('.', ','))
-        finally: self.entry_codigo.delete(0, tk.END); self.update()
+            try: nome, p_venda = self.storage.select(cols='nome, p_venda', where=f'id = {id_item}')[0]
+            except Exception as error: messagebox.showerror('Erro ao procurar produto', error)
+            else:
+                self.cashier.append((id_item, un, 0))
+                while len(str(id_item)) < 5: id_item = '0'+str(id_item)
+                self.vars['produto info'].set('\n'.join([
+                    f'Código: {id_item}',
+                    f'Unidades: {un}',
+                    f'Produto: {nome}',
+                    f'Preço unitário: R$ {p_venda:.2f}',
+                    f'Preço total: R$ {(p_venda*un):.2f}'.replace('.', ',')
+                ]))
+        finally: 
+            self.entry_codigo.delete(0, tk.END)
+            self.update_tree()
+    
+    def update_tree(self):
+        self.tree.delete(*self.tree.get_children(''))
+        total = 0
+        for item, (id_produto, quantidade, extra) in enumerate(self.cashier):
+            nome, p_venda = self.storage.select(cols='nome, p_venda', where=f'id={id_produto}')[0]
+            self.tree.insert('', 'end', text=item, values=[
+                id_produto,
+                nome,
+                quantidade,
+                f'R$ {p_venda:.2f}'.replace('.', ','), 
+                f'R$ {p_venda*quantidade:.2f}'.replace('.', ',')
+            ], tags=not (16-len(self.tree.get_children('')))%2)
+            total += p_venda*quantidade + extra
+        if total: self.vars['total'].set(f'Total: R$ {total:2f}'.replace('.', ','))
+        len_items = len(self.cashier)
+        if len_items < 16:
+            for j in range(16 - len_items):
+                self.tree.insert('', 'end', values=['']*5, tags=int((len_items + j)%2 == 0))
