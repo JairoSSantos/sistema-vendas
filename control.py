@@ -33,6 +33,7 @@ class ControlApp(tk.Frame):
         self.entrys = {'estoque':{}, 'vendas':{}} # entradas
         self.trees = {}
         self.combos = {}
+        self.formatting = {} # formatação dos dados que serão inseridos nas tabelas
 
         # definir frames da aba estoque
         self.frames['estoque'] = {'main': ttk.Frame(self.notebook_main)}
@@ -120,18 +121,18 @@ class ControlApp(tk.Frame):
         # definir treeview do estowue
         columns = [
             ('Código', 100),
-            ('Nome', 250),
+            ('Nome do produto', 250),
             ('Preço de venda', 150),
             ('Preço de custo', 150),
-            ('Quantidade', 100)
+            ('Quantidade', 120)
         ]
         self.scrollbar_estoque = ttk.Scrollbar(self.frames['estoque']['tree'], orient='vertical')
         self.trees['estoque'] = ttk.Treeview(self.frames['estoque']['tree'], columns=list(map(lambda a: a[0], columns)), height=29)
-        self.trees['estoque'].column('#0', width=50)
+        self.trees['estoque'].column('#0', width=0)
         for key, width in columns:
             self.trees['estoque'].column(key, width=width, anchor='center')
             self.trees['estoque'].heading(key, text=key)
-        self.trees['estoque'].bind('<Double-1>', lambda event: self.update('show_produto'))
+        self.trees['estoque'].bind('<Double-1>', lambda event: self.update('double_tree_estoque', event))
         self.trees['estoque'].bind('<<TreeviewSelect>>', lambda event: self.update('show_detalhes'))
         self.trees['estoque'].configure(yscroll=self.scrollbar_estoque.set)
         self.trees['estoque'].tag_configure(0, background=theme.colors[4])
@@ -139,6 +140,13 @@ class ControlApp(tk.Frame):
         self.trees['estoque'].pack(side=tk.LEFT)
         self.scrollbar_estoque.pack(side=tk.RIGHT, fill='y')
         self.scrollbar_estoque.config(command=self.trees['estoque'].yview)
+        self.formatting['estoque'] = lambda codigo, nome, p_venda, p_custo, quant: [
+            '0'*(5 - len(str(codigo))) + str(codigo) if len(str(codigo)) < 5 else str(codigo), 
+            nome, 
+            f'R$ {p_venda:.2f}'.replace('.', ','), 
+            f'R$ {p_custo:.2f}'.replace('.', ','), 
+            f'{quant} Un'
+        ]
 
         # definir widgets do relatório
         self.vars['n cadastros'] = tk.StringVar()
@@ -194,6 +202,7 @@ class ControlApp(tk.Frame):
 
         # definir treeview das vendas
         columns = [
+            ('Id', 50),
             ('Horário', 80),
             ('Total', 150),
             ('Valor pago', 150),
@@ -203,8 +212,7 @@ class ControlApp(tk.Frame):
         ]
         self.scrollbar_vendas = ttk.Scrollbar(self.frames['vendas']['tree'], orient='vertical')
         self.trees['vendas'] = ttk.Treeview(self.frames['vendas']['tree'], columns=list(map(lambda a: a[0], columns)), height=30)
-        self.trees['vendas'].column('#0', width=50, anchor='center')
-        self.trees['vendas'].heading('#0', text='Id')
+        self.trees['vendas'].column('#0', width=0)
         for i, (key, width) in enumerate(columns):
             self.trees['vendas'].column(key, width=width, anchor='center')
             self.trees['vendas'].heading(key, text=key)
@@ -214,6 +222,15 @@ class ControlApp(tk.Frame):
         self.scrollbar_vendas.config(command=self.trees['vendas'].yview)
         self.trees['vendas'].pack(side=tk.LEFT, fill='x')
         self.scrollbar_vendas.pack(side=tk.LEFT, fill='y')
+        self.formatting['vendas'] = lambda id_item, horario, total, pago, extra, formato:[
+            id_item,
+            horario, 
+            f'R$ {total:.2f}'.replace('.', ','), 
+            f'R$ {pago:.2f}'.replace('.', ','), 
+            f'R$ {(pago-total):.2f}'.replace('.', ','),
+            extra,
+            formato
+        ]
 
         # definir widgets do relatório de vendas
         ttk.Button(self.frames['vendas']['dados'], text='Relatório').pack(side=tk.LEFT)
@@ -223,9 +240,10 @@ class ControlApp(tk.Frame):
         self.notebook_main.add(self.frames['vendas']['main'], text='Vendas')
         self.notebook_main.grid(row=0, column=0)
 
+
         # atializar as abas
         self.update('estoque')
-        #self.update('vendas')
+        self.update('vendas')
     
     def delete(self):
         '''
@@ -273,6 +291,7 @@ class ControlApp(tk.Frame):
         '''
         Registrar produto.
         '''
+        key = self.vars['button cadastrar'].get()
         try:
             id_item = int(self.entrys['estoque']['id'].get())
             nome = str(self.entrys['estoque']['nome'].get())
@@ -281,43 +300,41 @@ class ControlApp(tk.Frame):
             quantidade = self.entrys['estoque']['quantidade'].get()
             descricao = str(self.entrys['estoque']['descricao'].get('0.0', tk.END))
             quantidade = 0 if quantidade == '' else int(quantidade)
-        except ValueError: messagebox.showerror('Erro ao cadastrar produto!', 'Preencha os campos corretamente.')
+        except ValueError: 
+            messagebox.showerror(f'Erro ao {key.lower()} produto!', 'Preencha os campos corretamente.')
         else:
-            if self.vars['button cadastrar'].get() == 'Cadastrar':
-                try:
-                    today = date.today().strftime('%Y-%m-%d')
-                    self.storage.insert_into(
-                        id=id_item, 
-                        nome=nome, 
-                        p_venda=p_venda, 
-                        p_custo=p_custo, 
-                        quantidade=quantidade, 
-                        descricao=descricao,
-                        data_cad=today,
-                        data_mod=today
-                    )
-                except Exception as error: 
-                    messagebox.showerror('Erro ao cadastrar produto!', error)
-                else:
-                    for item in self.entrys['estoque'].values():
-                        try: item.delete(0, tk.END)
-                        except: 
-                            try: item.delete('1.0', tk.END)
-                            except: pass
-                    self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
-                    self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
-        
-            elif self.vars['button cadastrar'].get() == 'Modificar':
-                try: self.storage.modify(self.vars['produto selecionado'], {'id':id_item, 'nome':nome, 
-                        'p_venda':p_venda, 'p_custo':p_custo, 'quantidade':quantidade, 'descricao':descricao})
-                except Exception as error: messagebox.showerror('Erro ao cadastrar produto!', error)
-                else:
-                    for item in self.entrys['estoque'].values(): 
-                        try: item.delete(0, tk.END)
-                        except: item.delete('0.0', tk.END)
-                    self.vars['button cadastrar'].set('Cadastrar')
-                    self.vars['button excluir'].set('Excluir')
-                    self.vars['produto selecionado'] = None
+            today = date.today().strftime('%Y-%m-%d')
+            kwargs = {
+                'id':id_item, 
+                'nome':nome, 
+                'p_venda':p_venda, 
+                'p_custo':p_custo, 
+                'quantidade':quantidade, 
+                'descricao':descricao,
+                'data_mod':today
+            }
+            try:
+                match key:
+                    case 'Cadastrar':
+                        self.storage.insert_into(data_cad=today, **kwargs)
+                        for item in self.entrys['estoque'].values():
+                            try: item.delete(0, tk.END)
+                            except: 
+                                try: item.delete('1.0', tk.END)
+                                except: pass
+                        self.entrys['estoque']['p_venda'].insert(0, 'R$ 0,00')
+                        self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
+            
+                    case 'Modificar':
+                        self.storage.update(set_=kwargs, where='id = {}'.format(self.vars['produto selecionado']))
+                        for item in self.entrys['estoque'].values(): 
+                            try: item.delete(0, tk.END)
+                            except: item.delete('0.0', tk.END)
+                        self.vars['button cadastrar'].set('Cadastrar')
+                        self.vars['button excluir'].set('Excluir')
+                        self.vars['produto selecionado'] = None
+            except Exception as error:
+                messagebox.showerror(f'Erro ao {key.lower()} produto!', error)
             
             self.update('estoque')
     
@@ -331,44 +348,15 @@ class ControlApp(tk.Frame):
                 |-> 'vendas': dados das vendas
             items: lista dos items que serão expostos no treeview, list[dict{}, dict{}, ...]
         '''
-        if key == 'estoque':
-            self.trees[key].delete(*self.trees[key].get_children())
-            for i, item in enumerate(items):
-                id_item, nome, p_venda, p_custo, quantidade, _, _, _ = item
-                id_item = str(id_item)
-                while len(id_item) < 5: id_item = '0' + id_item
-                self.trees[key].insert('', 'end', values=[
-                        id_item, 
-                        nome,
-                        f'R$ {p_venda:.2f}'.replace('.', ','), 
-                        f'R$ {p_custo:.2f}'.replace('.', ','), 
-                        f'{quantidade} Un'
-                    ], tags=int((i+2)%2 == 0)
-                )
-            len_items = len(items)
-            if len_items < 30:
-                for j in range(30 - len_items):
-                    self.trees[key].insert('', 'end', values=['']*5, tags=int((len_items + j)%2 == 0))
-
-        elif key == 'vendas':
-            self.trees[key].delete(*self.trees[key].get_children())
-            for i, item in enumerate(items):
-                id_item, horario, total, pago, extra, formato = item
-                id_item = str(id_item)
-                while len(id_item) < 5: id_item = '0'+id_item
-                if not pago: pago = total
-                self.trees[key].insert('', 'end', text=id_item, values=[
-                    horario, 
-                    f'R$ {total:.2f}'.replace('.', ','), 
-                    f'R$ {pago:.2f}'.replace('.', ','), 
-                    f'R$ {(pago-total):.2f}'.replace('.', ','),
-                    extra,
-                    formato
-                ], tags=int((i + 2)%2 == 0))
-            len_items = len(items)
-            if len_items < 30:
-                for j in range(30 - len_items):
-                    self.trees[key].insert('', 'end', text='', values=['']*6, tags=int((len_items + j)%2 == 0))
+        self.trees[key].delete(*self.trees[key].get_children())
+        height = self.trees[key].cget('height')
+        ncols = len(self.trees[key].cget('columns'))
+        i = 0
+        for i, item in enumerate(items): 
+            self.trees[key].insert('', 'end', values=self.formatting[key](*item[:ncols]), tags=int((i+2)%2 == 0))
+        while i < height:
+            i += 1
+            self.trees[key].insert('', 'end', values=['']*ncols, tags=int((i+2)%2 == 0))
     
     def update(self, key, event=None):
         '''
@@ -377,7 +365,7 @@ class ControlApp(tk.Frame):
         Args:
             key: chave referente à parte da aplicação que será atualizado.
                 |-> 'estoque': atualizar toda a aba de estoque
-                |-> 'show_produto': modificar produto
+                |-> 'double_tree_estoque': modificar produto
                 |-> 'show_detalhes': mostrar detalhes do produto
                 |-> 'vendas': atualizar toda a aba de vendas
                 |-> 'vendas_verificar_arquivos': verificar arquivos de vendas e atualizar as datas
@@ -396,23 +384,26 @@ class ControlApp(tk.Frame):
                 self.entrys['estoque']['p_custo'].delete(0, tk.END)
                 self.entrys['estoque']['p_custo'].insert(0, 'R$ 0,00')
 
-            case 'show_produto': # mostrar produto para modificar
-                try: id_item = int(self.trees['estoque'].item(self.trees['estoque'].focus())['values'][0])
-                except ValueError: pass
-                else:
-                    self.vars['produto selecionado'] = id_item
-                    codigo, nome, p_venda, p_custo, quant, desc = self.storage.get(where=f'id = {id_item}')[0][:6]
-                    for entry in self.entrys['estoque'].values(): 
-                        try: entry.delete(0, tk.END)
-                        except: entry.delete('0.0', tk.END)
-                    self.entrys['estoque']['id'].insert(0, codigo)
-                    self.entrys['estoque']['nome'].insert(0, nome)
-                    self.entrys['estoque']['p_venda'].insert(0, f'R$ {p_venda:.2f}'.replace('.', ','))
-                    self.entrys['estoque']['p_custo'].insert(0, f'R$ {p_custo:.2f}'.replace('.', ','))
-                    self.entrys['estoque']['quantidade'].insert(0, quant)
-                    self.entrys['estoque']['descricao'].insert('0.0', desc)
-                    self.vars['button cadastrar'].set('Modificar')
-                    self.vars['button excluir'].set('Cancelar')
+            case 'double_tree_estoque':
+                match self.trees['estoque'].identify('region', event.x, event.y):
+                    case 'heading': pass
+                    case 'cell': # mostrar produto para modificar
+                        try: id_item = int(self.trees['estoque'].item(self.trees['estoque'].focus())['values'][0])
+                        except ValueError: pass
+                        else:
+                            self.vars['produto selecionado'] = id_item
+                            codigo, nome, p_venda, p_custo, quant, desc = self.storage.select(where=f'id={id_item}')[0][:6]
+                            for entry in self.entrys['estoque'].values(): 
+                                try: entry.delete(0, tk.END)
+                                except: entry.delete('0.0', tk.END)
+                            self.entrys['estoque']['id'].insert(0, codigo)
+                            self.entrys['estoque']['nome'].insert(0, nome)
+                            self.entrys['estoque']['p_venda'].insert(0, f'R$ {p_venda:.2f}'.replace('.', ','))
+                            self.entrys['estoque']['p_custo'].insert(0, f'R$ {p_custo:.2f}'.replace('.', ','))
+                            self.entrys['estoque']['quantidade'].insert(0, quant)
+                            self.entrys['estoque']['descricao'].insert('0.0', desc)
+                            self.vars['button cadastrar'].set('Modificar')
+                            self.vars['button excluir'].set('Cancelar')
         
             case 'show_detalhes': # mostrar detalhes do produto
                 item = self.trees['estoque'].item(self.trees['estoque'].focus())
@@ -470,19 +461,20 @@ class ControlApp(tk.Frame):
                 ].focus()
 
             case 'vendas': # atualizar aba de vendas em geral
-                self.update('vendas_verificar_arquivos')
+                #self.update('vendas_verificar_arquivos')
+                self.tree_update('vendas', self.sales.select())
         
             case 'vendas_verificar_arquivos': # atualizar arquivos de vendas
                 dates = {}
-                for item in self.sales.select(cols='horario').split(' ')[0].split('-'):
-                    year, month, day = item[0]
+                for item in self.sales.select(expr='horario'):
+                    year, month, day = item[0].split(' ')[0].split('-')
                     if year in dates.keys():
                         if month in dates[year].keys(): dates[year][month].append(day)
                         else: dates[year][month] = [day]
                     else: dates[year] = {month:[day]}
                 self.vars['dates'] = dates
                 self.combos['ano']['values'] = list(dates.keys()) + ['----']
-                self.combos['ano'].current(len(dates.keys())-1)
+                self.combos['ano'].current(len(dates.keys()))
                 self.update('vendas_combo_ano')
                 self.update('vendas_combo_mes')
                 self.update('vendas_combo_dia')
@@ -493,7 +485,7 @@ class ControlApp(tk.Frame):
                     pass
                 else:
                     self.combos['mes']['values'] = list(self.vars['dates'][year].keys()) + ['--']
-                    self.combos['mes'].current(len(self.vars['dates'][year].keys())-1)
+                    self.combos['mes'].current(len(self.vars['dates'][year].keys()))
             
             case 'vendas_combo_mes':
                 year = self.combos['ano'].get()
@@ -502,7 +494,7 @@ class ControlApp(tk.Frame):
                     pass
                 else:
                     self.combos['dia']['values'] = self.vars['dates'][year][month] + ['--']
-                    self.combos['dia'].current(len(self.vars['dates'][year][month])-1)
+                    self.combos['dia'].current(len(self.vars['dates'][year][month]))
             
             case 'vendas_combo_dia':
                 year = self.combos['ano'].get()

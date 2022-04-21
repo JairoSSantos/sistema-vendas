@@ -1,4 +1,39 @@
 
+TABLES_DEFINITIONS = {
+    'produtos': (
+        'id int unique auto_increment',
+        'nome varchar(30) not null unique',
+        'p_venda decimal(7, 2)',
+        'p_custo decimal(7, 2)',
+        'quantidade mediumint',
+        'descricao tinytext',
+        'data_cad date',
+        'data_mod date',
+        'primary key (id)'
+    ),
+
+    'vendas':(
+        'id int unique auto_increment',
+        'horario datetime',
+        'total decimal(7, 2) default 0',
+        'pago decimal(7, 2) default 0',
+        'extra decimal(7, 2) default 0',
+        'formato enum("dinheiro", "crédito", "débito") default "dinheiro"',
+        'primary key (id)'
+    ),
+
+    'compras':(
+        'id int unique auto_increment',
+        'id_venda int not null',
+        'id_produto int not null',
+        'quantidade mediumint not null',
+        'extra decimal(7, 2) default 0',
+        'foreign key (id_venda) references sistema_vendas.vendas(id)',
+        'foreign key (id_produto) references sistema_vendas.produtos(id)',
+        'primary key (id)'
+    )
+}
+
 def init(connection):
     global _connection
     _connection = connection
@@ -35,47 +70,12 @@ def create_database():
     )
 
 @DDL
-def create_table(table_name:str) -> str:
-    match table_name:
-        case 'compras':
-            return (
-                'create table if not exists sistema_vendas.compras ('
-                'id_venda int not null,'
-                'id_produto int not null,'
-                'quantidade mediumint not null,'
-                'extra decimal(7, 2) default 0,'
-                'foreign key (id_venda) references sistema_vendas.vendas(id),'
-                'foreign key (id_produto) references sistema_vendas.produtos(id)'
-                ') default charset = utf8'
-            )
-
-        case 'produtos':
-            return (
-                'create table if not exists sistema_vendas.produtos ('
-                'id int unique auto_increment,'
-                'nome varchar(30) not null unique,'
-                'p_venda decimal(7, 2),'
-                'p_custo decimal(7, 2),'
-                'quantidade mediumint,'
-                'descricao tinytext,'
-                'data_cad date,'
-                'data_mod date,'
-                'primary key (id)'
-                ') default charset = utf8'
-            )
-        
-        case 'vendas':
-            return (
-                'create table if not exists sistema_vendas.vendas ('
-                'id int unique auto_increment,'
-                'horario datetime,'
-                'total decimal(7, 2),'
-                'pago decimal(7, 2),'
-                'extra decimal(7, 2) default 0,'
-                'formato enum("dinheiro", "crédito", "débito"),'
-                'primary key (id)'
-                ') default charset = utf8'
-            )
+def create_table(table_key:str) -> str:
+    return (
+        f'create table if not exists sistema_vendas.{table_key} ('
+        + ','.join(TABLES_DEFINITIONS[table_key])
+        + ') default charset = utf8'
+    )
 
 @DQL
 def get_databases(like:str=None) -> str:
@@ -87,12 +87,15 @@ def get_tables(like:str=None) -> str:
 
 
 class Table:
-    def __init__(self, name:str):
+    def __init__(self, name:str) -> None:
         self.name = name
     
     @DML
-    def delete(self, index:int) -> str:
-        return f'delete from sistema_vendas.{self.name} where id = {index}'
+    def delete(self, **kwargs) -> str:
+        return (
+            f'delete from sistema_vendas.{self.name} ' 
+            + ' '.join(f'{k} {v}' for k, v in kwargs.items())
+        )
 
     @DQL
     def get_next_id(self) -> str:
@@ -114,14 +117,22 @@ class Table:
             keys= ','.join(kwargs.keys()),
             values= ','.join(map(lambda x: f'"{x}"', kwargs.values()))
         )
-
-    @DML
-    def modify(self): pass
     
     @DQL
-    def select(self, cols:str='*', where:str=None, like:str=None) -> str:
+    def select(self, expr:str='*', **kwargs) -> str:
         return (
-            f'select {cols} from sistema_vendas.{self.name}'
-            + (f' where {where}' if where else '')
-            + (f' like {like}' if like else '')
+            f'select {expr} from sistema_vendas.{self.name} ' 
+            + ' '.join(f'{k} {v}' for k, v in kwargs.items())
+        )
+    
+    @DML
+    def update(self, set_:(str|dict), **kwargs) -> str:
+        '''
+        Args:
+            set_: commando no formato string ou um dicionário na forma {coluna:valor, ...}
+        '''
+        return (
+            f'update sistema_vendas.{self.name} '
+            + 'set {} '.format(','.join([f'{k} = "{v}"' for k, v in set_.items()]) if type(set_) == dict else set_)
+            + ' '.join(f'{k} {v}' for k, v in kwargs.items())
         )

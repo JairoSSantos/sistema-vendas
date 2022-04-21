@@ -193,7 +193,7 @@ settings_cashier = {
         'configure':{
             'background':'white',
             'foreground':colors[2],
-            'font':fonts[5],
+            'font':fonts[2],
             'rowheight':30
         },
         'map':{
@@ -205,7 +205,7 @@ settings_cashier = {
         'configure':{
             'background':colors[5],
             'foreground':'white',
-            'font':fonts[0]
+            'font':fonts[1]
         }
     },
     'Vertical.TScrollbar':{
@@ -229,6 +229,6 @@ settings_cashier = {
     }
 }
 labelinfo_style = {
-    'bg':colors[3],
+    'bg':colors[0],
     'fg':'white'
 }
