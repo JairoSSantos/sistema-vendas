@@ -1,3 +1,4 @@
+DATABASE = 'sistema_vendas'
 
 TABLES_DEFINITIONS = {
     'produtos': (
@@ -64,7 +65,7 @@ def DQL(function): # Data Query Language
 @DDL
 def create_database():
     return (
-        f'create database if not exists sistema_vendas '
+        f'create database if not exists {DATABASE} '
         'default character set utf8 '
         'default collate utf8_general_ci'
     )
@@ -72,7 +73,7 @@ def create_database():
 @DDL
 def create_table(table_key:str) -> str:
     return (
-        f'create table if not exists sistema_vendas.{table_key} ('
+        f'create table if not exists {DATABASE}.{table_key} ('
         + ','.join(TABLES_DEFINITIONS[table_key])
         + ') default charset = utf8'
     )
@@ -83,19 +84,24 @@ def get_databases(like:str=None) -> str:
 
 @DQL
 def get_tables(like:str=None) -> str:
-    return 'show tables from sistema_vendas' + (f' like "{like}"' if like else '')
+    return f'show tables from {DATABASE}' + (f' like "{like}"' if like else '')
 
 
 class Table:
     def __init__(self, name:str) -> None:
-        self.name = name
+        self.name = f'{DATABASE}.{name}'
+        self.table_name = name
     
     @DML
     def delete(self, **kwargs) -> str:
         return (
-            f'delete from sistema_vendas.{self.name} ' 
+            f'delete from {self.name} ' 
             + ' '.join(f'{k} {v}' for k, v in kwargs.items())
         )
+    
+    @DQL
+    def get_columns(self):
+        return f'show columns from {self.name}'
 
     @DQL
     def get_next_id(self) -> str:
@@ -103,7 +109,7 @@ class Table:
             'select auto_increment '
             'from information_schema.TABLES '
             'where table_schema = "sistema_vendas" '
-            f'and table_name = "{self.name}"'
+            f'and table_name = "{self.table_name}"'
         )
     
     @DQL
@@ -112,7 +118,7 @@ class Table:
     
     @DML
     def insert_into(self, **kwargs) -> str:
-        return 'insert into sistema_vendas.{name} ({keys}) values ({values})'.format(
+        return 'insert into {name} ({keys}) values ({values})'.format(
             name=self.name,
             keys= ','.join(kwargs.keys()),
             values= ','.join(map(lambda x: f'"{x}"', kwargs.values()))
@@ -121,7 +127,7 @@ class Table:
     @DQL
     def select(self, expr:str='*', **kwargs) -> str:
         return (
-            f'select {expr} from sistema_vendas.{self.name} ' 
+            f'select {expr} from {self.name} ' 
             + ' '.join(f'{k} {v}' for k, v in kwargs.items())
         )
     
@@ -132,7 +138,7 @@ class Table:
             set_: commando no formato string ou um dicionário na forma {coluna:valor, ...}
         '''
         return (
-            f'update sistema_vendas.{self.name} '
+            f'update {self.name} '
             + 'set {} '.format(','.join([f'{k} = "{v}"' for k, v in set_.items()]) if type(set_) == dict else set_)
             + ' '.join(f'{k} {v}' for k, v in kwargs.items())
         )
