@@ -5,34 +5,53 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import simpledialog
 from datetime import date
-import traceback
+from dataclasses import dataclass
 
-#ARROW_UP = u'\u21EA'
+ARROW_UP = u'\u2B06'
+ARROW_DOWN = u'\u2B07'
 
 def br_currency(value:float):
     return f'R$ {value:.2f}'.replace('.', ',')
 
+# table_info = (tag, heading, col_width, formatting)
 TABLE_INFO = {
-    'estoque':{
-        'id':('Código', 100, int),
-        'nome':('Nome do Produto', 250, str),
-        'p_venda':('Preço de Venda', 150, br_currency),
-        'p_custo':('Preço de Custo', 150, br_currency),
-        'quantidade':('Quantidade', 120, int),
-    },
+    'estoque':(
+        ('id', 'Código', 100, int),
+        ('nome', 'Nome do Produto', 250, str),
+        ('p_venda', 'Preço de Venda', 150, br_currency),
+        ('p_custo', 'Preço de Custo', 150, br_currency),
+        ('quantidade', 'Quantidade', 120, int)
+    ),
 }
+
+@dataclass
+class OrderBy:
+    column:str #nome da coluna
+    asc:bool=True #se True, a coluna será organizada em ordem ascendente
+
+    def get(self) -> str:
+        return 'by {} {}'.format(self.column, 'asc' if self.asc else 'desc')
+    
+    def get_arrow(self) -> str:
+        return ARROW_DOWN if self.asc else ARROW_UP
 
 class Treeview(ttk.Treeview):
     def __init__(self, master, table_info, bindings=(), **kwargs):
         self.table_info = table_info
-        ttk.Treeview.__init__(self, master, columns=tuple(self.table_info.keys()), **kwargs)
+        self.columns = tuple(map(lambda col: col[0], self.table_info))
+        ttk.Treeview.__init__(self, master, columns=self.columns, **kwargs)
+
+        self.orderby = OrderBy(self.columns[0], False)
 
         self.column('#0', width=0)
-        for col, (heading, width, _) in self.table_info.items():
+        for col, heading, width, _ in self.table_info:
+            if col == self.orderby.column: heading += self.orderby.get_arrow()
             self.column(col, width=width, anchor='center')
             self.heading(col, text=heading)
+
         for event_tag, function in bindings:
             self.bind(event_tag, function)
+
         self.height = self.cget('height')
         self.ncols = len(self.table_info)
 
@@ -40,17 +59,28 @@ class Treeview(ttk.Treeview):
         self.tag_configure(1, background=COLORS[4])
         self.scrollbar = ttk.Scrollbar(master, orient='vertical')
         self.configure(yscroll=self.scrollbar.set)
-        self.pack(side=tk.LEFT)
         self.scrollbar.pack(side=tk.RIGHT, fill='y')
         self.scrollbar.config(command=self.yview)
     
-    def get_focus(self):
+    def get_focus(self) -> dict:
         return self.item(self.focus())
+    
+    def set_orderby(self, col_index:str) -> None:
+        column = self.column(col_index)
+        if column['id'] == self.orderby.column:
+            self.orderby.asc = not self.orderby.asc
+            self.heading(self.orderby.column,
+                text=self.heading(self.orderby.column)['text'][:-1] + self.orderby.get_arrow())
+        else:
+            self.heading(self.orderby.column, text=self.heading(self.orderby.column)['text'][:-1])
+            self.orderby = OrderBy(column['id'])
+            self.heading(self.orderby.column,
+                text=self.heading(self.orderby.column)['text'] + self.orderby.get_arrow())
     
     def update_items(self, items:(list|tuple)) -> None:
         self.delete(*self.get_children())
         for i, item in enumerate(items):
-            self.insert('', 'end', values=[f(value) for value, (_, _, f) in zip(item, self.table_info.values())], tags=i%2)
+            self.insert('', 'end', values=[f(value) for value, (_, _, _, f) in zip(item, self.table_info)], tags=i%2)
         i = len(items)
         while i <= self.height:
             self.insert('', 'end', values=['']*self.ncols, tags=i%2)
@@ -83,13 +113,13 @@ class StorageController(ttk.Frame):
 
         # widgets para entrada de dados do estoque
         labels_width = 15
-        for i, (col, (text, _, _)) in enumerate(TABLE_INFO['estoque'].items()):
+        for i, (col, text, _, _) in enumerate(TABLE_INFO['estoque']):
             label = ttk.Label(self.frames['form'], text= text + ':', width=labels_width, anchor='e')
             label.grid(row=i, column=0, pady=2, sticky='w', padx=(0, 2))
             self.entrys[col] = (MoneyEntry if 'p_' in col else StylisedEntry)(self.frames['form'])
             self.entrys[col].grid(row=i, column=1, padx=[0, 10], sticky='ew')
-        self.entrys['p_venda'].insert(0, 'R$ 0,00')
-        self.entrys['p_custo'].insert(0, 'R$ 0,00')
+        self.entrys['p_venda'].set('R$ 0,00')
+        self.entrys['p_custo'].set('R$ 0,00')
         self.entrys['quantidade']['validate'] = 'key'
         self.entrys['quantidade']['validatecommand'] = (lambda char: char.isnumeric(), '%S')
         self.entrys['quantidade'].bind('<Double-Button-1>', self.update)
@@ -127,6 +157,7 @@ class StorageController(ttk.Frame):
                       ('<<TreeviewSelect>>', self.update)),
             height=29
         )
+        self.tree.pack(side=tk.LEFT)
 
         # definir widgets do relatório
         self.vars['n-cadastros'] = tk.StringVar()
@@ -136,17 +167,15 @@ class StorageController(ttk.Frame):
         
         self.bind_class('Entry', '<Return>', self.update)
         self.clear_form()
-        self.tree.update_items(self.storage.select())
+        self.tree.update_items(self.storage.select(order=self.tree.orderby.get()))
     
     def clear_form(self) -> None:
-        for item in self.entrys.values():
-            try:item.delete(0, tk.END)
-            except:item.delete('0.0', tk.END)
+        for item in self.entrys.values(): item.delete_all()
         next_id = str(self.storage.get_next_id()[0][0])
         #self.vars['n-cadastros'].set(f'Produtos cadastrados: {len(items)}')
-        self.entrys['id'].insert(0, '0'*(5 - len(next_id)) + next_id)
-        self.entrys['p_venda'].insert(0, 'R$ 0,00')
-        self.entrys['p_custo'].insert(0, 'R$ 0,00')
+        self.entrys['id'].set('0'*(5 - len(next_id)) + next_id)
+        self.entrys['p_venda'].set('R$ 0,00')
+        self.entrys['p_custo'].set('R$ 0,00')
     
     def delete(self) -> None:
         '''
@@ -162,16 +191,14 @@ class StorageController(ttk.Frame):
                 else: 
                     if messagebox.askokcancel('Excluir produto', 'Deseja excluir {} - {}?'.format(*item['values'][:2])):
                         self.storage.delete(where=f'id={id_item}')
-                self.tree.update_items(self.storage.select())
+                self.tree.update_items(self.storage.select(order=self.tree.orderby.get()))
 
             case 'Cancelar':
-                for item in self.entrys.values(): 
-                    try: item.delete(0, tk.END)
-                    except: item.delete('0.0', tk.END)
+                self.clear_form()
                 self.vars['button-registrar'].set('Registrar')
                 self.vars['button-excluir'].set('Excluir')
                 self.vars['produto-selecionado'] = None
-                self.tree.update_items(self.storage.select())
+                self.tree.update_items(self.storage.select(order=self.tree.orderby.get()))
                 self.clear_form()
     
     def find(self):
@@ -233,37 +260,35 @@ class StorageController(ttk.Frame):
         '''
         Atualizar aplicação.
         '''
-        if event:
-            if event.keysym == 'Return':
-                entrys_list = list(self.entrys.values())
-                entrys_list[entrys_list.index(event.widget) + 1].focus()
-
-            '''match event.widget:
-                case 'duplo_click':
+        if event.keysym == 'Return':
+            entrys_list = list(self.entrys.values())
+            try: entrys_list[entrys_list.index(event.widget) + 1].focus()
+            except IndexError: pass
+        else:
+            match event.widget:
+                case self.tree:
                     match self.tree.identify('region', event.x, event.y):
-                        case 'heading': 
-                            i = int(self.tree.identify('column', event.x, event.y).split('#')[-1])
-                            col = self.storage.get_columns()[i][0]
-                            print('tree press heading:', col)
+                        case 'heading':
+                            self.tree.set_orderby(self.tree.identify('column', event.x, event.y))
+                            self.tree.update_items(self.storage.select(order=self.tree.orderby.get()))
 
-                        case 'cell': 
-                            try: id_item = int(self.tree.item(self.tree.focus())['values'][0])
+                        case 'cell':
+                            print(event)
+                            try: id_item = int(self.tree.get_focus()['values'][0])
                             except ValueError: pass
                             else:
                                 self.vars['produto-selecionado'] = id_item
                                 item = self.storage.select(where=f'id={id_item}')[0][:6]
-                                for entry, val in zip(self.entrys.values(), self.formatting(*item[:5]) + [item[-1]]): 
-                                    try: 
-                                        entry.delete(0, tk.END)
-                                        entry.insert(0, val)
-                                    except: 
-                                        entry.delete('0.0', tk.END)
-                                        entry.insert('0.0', val)
+
+                                for i, (entry, val) in enumerate(zip(self.entrys.values(), item)): 
+                                    try: f = TABLE_INFO['estoque'][i][3] # tente obter a formatação
+                                    except IndexError: entry.set(val) # se não houver, apenas selecione o valor
+                                    else: entry.set(f(val)) # se houver, aplique a formatação
                                 self.vars['button-registrar'].set('Modificar')
                                 self.vars['button-excluir'].set('Cancelar')
                     
                 case 'mostrar_detalhes': 
-                    item = self.tree.item(self.tree.focus())
+                    item = self.tree.get_focus()
                     try: 
                         id_item = int(item['values'][0])
                     except ValueError: pass
@@ -294,7 +319,7 @@ class StorageController(ttk.Frame):
                         except ValueError: val_add = 0
                         val += val_add
                     self.entrys[key].delete(0, tk.END)
-                    self.entrys[key].insert(0, f'{val}')'''
+                    self.entrys[key].insert(0, f'{val}')
 
 '''
 class SalesController(tk.Frame):

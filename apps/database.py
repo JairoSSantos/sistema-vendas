@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 DATABASE = 'sistema_vendas'
 
 TABLES_DEFINITIONS = {
@@ -86,10 +88,12 @@ def get_databases(like:str=None) -> str:
 def get_tables(like:str=None) -> str:
     return f'show tables from {DATABASE}' + (f' like "{like}"' if like else '')
 
+@dataclass
 class Table:
-    def __init__(self, table_name:str):
-        self.table_name = table_name
-        self.name = f'{DATABASE}.{table_name}'
+    table_name:str
+
+    def __post_init__(self):
+        self.name = f'{DATABASE}.{self.table_name}'
     
     @DML
     def delete(self, **kwargs) -> str:

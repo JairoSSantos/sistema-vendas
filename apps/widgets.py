@@ -20,6 +20,13 @@ class StylisedEntry(tk.Entry):
         kwargs.update(ENTRY)
         tk.Entry.__init__(self, *args, **kwargs)
     
+    def delete_all(self) -> None:
+        self.delete(0, tk.END)
+    
+    def set(self, value) -> None:
+        self.delete_all()
+        self.insert(0, value)
+    
 class MoneyEntry(StylisedEntry):
     def __init__(self, *args, **kwargs):
         StylisedEntry.__init__(self, *args, **kwargs)
@@ -32,10 +39,16 @@ class MoneyEntry(StylisedEntry):
         value = ''.join(filter(lambda char:char.isnumeric(), self.get())).lstrip('0')
         len_value =  len(value)
         if len_value < 2: value = '0'*(2 - len_value) + value
-        self.delete(0, tk.END)
-        self.insert(0, 'R$ {},{}'.format(value[:-1], value[-1:]))
+        self.set('R$ {},{}'.format(value[:-1], value[-1:]))
 
 class StylisedText(tk.Text):
     def __init__(self, *args, **kwargs):
         kwargs.update(ENTRY)
         tk.Text.__init__(self, *args, **kwargs)
+    
+    def delete_all(self) -> None:
+        self.delete('0.0', tk.END)
+    
+    def set(self, value) -> None:
+        self.delete_all()
+        self.insert('0.0', value)
