@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox, simpledialog
-from database import Table
+from apps.database import Table
 from datetime import date
-import theme
+from apps import theme
 import traceback
 
 def update(function):

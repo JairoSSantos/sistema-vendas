@@ -86,11 +86,10 @@ def get_databases(like:str=None) -> str:
 def get_tables(like:str=None) -> str:
     return f'show tables from {DATABASE}' + (f' like "{like}"' if like else '')
 
-
 class Table:
-    def __init__(self, name:str) -> None:
-        self.name = f'{DATABASE}.{name}'
-        self.table_name = name
+    def __init__(self, table_name:str):
+        self.table_name = table_name
+        self.name = f'{DATABASE}.{table_name}'
     
     @DML
     def delete(self, **kwargs) -> str:
