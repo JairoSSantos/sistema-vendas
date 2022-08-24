@@ -2,11 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 from apps.database import Table
 from apps.widgets import StylisedApp
-from apps.controller import *
+from apps.apps import *
 
 #ARROW_UP = u'\u21EA'
 
-class ControlApp(StylisedApp):
+@login
+class ControllerApp(StylisedApp):
     def __init__(self, storage:Table, sales:Table, purchase:Table, master:tk.Frame=None) -> None:
         # configurando janela principal
         StylisedApp.__init__(self, master)
@@ -29,3 +30,6 @@ class ControlApp(StylisedApp):
         # atializar as abas
         #storage_frame.update('estoque')
         #sales_frame.update('vendas')
+
+if __name__ == '__main__':
+    ControllerApp().mainloop()

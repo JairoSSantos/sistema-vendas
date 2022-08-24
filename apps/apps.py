@@ -1,9 +1,8 @@
 from apps.widgets import *
+from apps import database
 from apps.database import Table
-from apps.theme import COLORS
-#from tkinter import ttk
+from mysql.connector import connect, errors as mysql_errors
 from tkinter import messagebox
-#from tkinter import simpledialog
 import traceback
 
 def br_currency(value:float):
@@ -19,6 +18,61 @@ TABLE_INFO = {
         ('quantidade', 'Quantidade', 120, int)
     ),
 }
+
+def login(App):
+
+    class ConnectedApp(LoginApp):
+        def __init__(self, master=None) -> None:
+            super().__init__(App, master)
+
+    return ConnectedApp
+
+class LoginApp(StylisedApp):
+    def __init__(self, App, master=None) -> None:
+        self.App = App
+        StylisedApp.__init__(self, master)
+        self.pack()
+
+        login_frame = ttk.Frame(self)
+        login_frame.pack(padx=20, pady=20)
+
+        ttk.Label(login_frame, text='Senha:').grid(row=1, column=1)
+        self.pass_entry = StylisedEntry(login_frame, show='*')
+        self.pass_entry.bind('<Return>', self.check_password)
+        self.pass_entry.grid(row=1, column=2, padx=5)
+        ttk.Button(login_frame, text='Confirmar', command=self.check_password).grid(row=1, column=3)
+
+        self.login_message = tk.StringVar()
+        self.login_message_label = ttk.Label(login_frame, textvariable=self.login_message)
+        self.login_message_label.grid(row=2, column=1, columnspan=3)
+        self.login_message_label.grid_remove()
+    
+    def open_app(self):
+        self.destroy()
+        self.App(Table('produtos'), Table('vendas'), Table('compras')).mainloop()
+    
+    def check_password(self, event=None):
+        try:
+            with connect(host='localhost', user='root', password=self.pass_entry.get()) as con:
+                database.init(con)
+                if not database.get_databases('sistema_vendas'):
+                    self.login_message.set('Criando banco de dados "sistema_vendas"...')
+                    self.update()
+                    database.create_database()
+                
+                for table_name in ('produtos', 'vendas', 'compras'):
+                    if not database.get_tables(table_name): 
+                        self.login_message.set(f'Criando tabela "{table_name}"...')
+                        self.login_message_label.grid()
+                        self.update()
+                        database.create_table(table_name)
+                        self.login_message_label.grid_remove()
+
+                self.open_app()
+
+        except mysql_errors.ProgrammingError:
+            self.pass_entry.delete(0, tk.END)
+            messagebox.showerror(f'Erro de conexão', traceback.format_exc())
 
 class StorageController(ttk.Frame):
     def __init__(self, storage:Table, master):
