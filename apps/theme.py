@@ -19,6 +19,9 @@ FONTS = [
     ('calibri', 24)     # 7
 ]
 
+ARROW_UP = u'\u2B06'
+ARROW_DOWN = u'\u2B07'
+
 # configurações do estilo da janela de controle
 SETTINGS_MAIN = {
     'TNotebook':{
@@ -84,7 +87,7 @@ SETTINGS_MAIN = {
     'Treeview.Heading':{
         'configure':{
             'background':COLORS[5],
-            'foreground':'white',
+            'foreground':COLORS[0],
             'font':FONTS[2]
         }
     },

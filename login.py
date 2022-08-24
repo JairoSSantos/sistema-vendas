@@ -3,7 +3,7 @@ from control import *
 from mysql.connector import connect, errors as mysql_errors
 from apps import database
 from apps.widgets import StylisedApp, StylisedEntry
-from apps.theme import SETTINGS_MAIN
+#import traceback
 
 class LoginApp(StylisedApp):
     def __init__(self, master=None) -> None:
@@ -55,13 +55,13 @@ class LoginApp(StylisedApp):
                         self.update()
                         database.create_table(table_name)
                         self.login_message_label.grid_remove()
-                
+
                 self.open_frame.pack(pady=10)
                 self.open_app()
 
         except mysql_errors.ProgrammingError:
             self.pass_entry.delete(0, tk.END)
-            messagebox.showerror(f'Erro de login', 'Senha incorreta!')
+            messagebox.showerror(f'Erro de conexão', traceback.format_exc())
 
 if __name__ == '__main__':
     LoginApp().mainloop()

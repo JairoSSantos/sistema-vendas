@@ -6,12 +6,10 @@ TABLES_DEFINITIONS = {
     'produtos': (
         'id int unique auto_increment',
         'nome varchar(30) not null unique',
-        'p_venda decimal(7, 2)',
-        'p_custo decimal(7, 2)',
-        'quantidade mediumint',
+        'p_venda decimal(7, 2) default 0',
+        'p_custo decimal(7, 2) default 0',
+        'quantidade mediumint default 0',
         'descricao tinytext',
-        'data_cad date',
-        'data_mod date',
         'primary key (id)'
     ),
 
