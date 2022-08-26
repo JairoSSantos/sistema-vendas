@@ -20,17 +20,16 @@ TABLE_INFO = {
 }
 
 def login(App):
-
     class ConnectedApp(LoginApp):
         def __init__(self, master=None) -> None:
             super().__init__(App, master)
-
     return ConnectedApp
 
 class LoginApp(StylisedApp):
     def __init__(self, App, master=None) -> None:
         self.App = App
         StylisedApp.__init__(self, master)
+        self.master.title('Login')
         self.pack()
 
         login_frame = ttk.Frame(self)
@@ -129,15 +128,15 @@ class StorageController(ttk.Frame):
         # definir widgets para pesquisar produto
         ttk.Label(self.frames['pesquisar'], text='Pesquisar:').grid(row=0, column=0, padx=[0, 2])
         self.find_entry = StylisedEntry(self.frames['pesquisar'], width=70)
-        self.find_entry.bind('<KeyPress>', self.find)
+        self.find_entry.bind('<KeyRelease>', self.find)
         self.find_entry.grid(row=0, column=1)
 
         # definir treeview do estowue
         self.tree = Treeview(
             master=self.frames['tree'], 
             table_info=TABLE_INFO['estoque'],
-            bindings=(('<Double-1>', self.update),
-                      ('<<TreeviewSelect>>', self.update)),
+            bindings=(('<Double-1>', self.tree_events),
+                      ('<<TreeviewSelect>>', self.tree_events)),
             height=29
         )
         self.tree.pack(side=tk.LEFT)
@@ -161,7 +160,7 @@ class StorageController(ttk.Frame):
                 try: 
                     item = self.tree.get_focus()
                     id_item = int(item['values'][0])
-                except ValueError: 
+                except IndexError:
                     messagebox.showwarning('Erro ao excluir produto!', 'Selecione o produto para excluí-lo.')
                 else: 
                     if messagebox.askokcancel('Excluir produto', 'Deseja excluir {} - {}?'.format(*item['values'][:2])):
@@ -175,15 +174,15 @@ class StorageController(ttk.Frame):
                 self.tree.update_items(self.storage.select(order=self.tree.orderby.get()))
                 self.form.clear()
     
-    def find(self):
+    def find(self, event:tk.Event=None):
         '''
         Pesquisar nos dados o valor da entrada.
         '''
         try:
             like = '"%{}%"'.format(self.find_entry.get())
-            self.tree.update(self.storage.select(
-                where= '({})'.format(' or '.join([f'{col[0]} like {like}' for col in self.storage.get_columns()])),
-                **({'order by': self.vars['ordem']} if self.vars['ordem'] else {})
+            self.tree.update_items(self.storage.select(
+                where= '({})'.format(' or '.join(map(lambda col: f'{col} like {like}', self.tree.columns))),
+                order= self.tree.orderby.get()
             ))
         except Exception as error:
             messagebox.showerror(f'Erro: {error}', traceback.format_exc())
@@ -195,7 +194,7 @@ class StorageController(ttk.Frame):
         key = self.vars['button-registrar'].get()
         try:
             kwargs = self.form.get()
-            print(kwargs)
+            #print(kwargs)
             match key:
                 case 'Registrar':
                     self.storage.insert_into(**kwargs)
@@ -211,39 +210,34 @@ class StorageController(ttk.Frame):
             self.form.clear()
             self.tree.update_items(self.storage.select(order=self.tree.orderby.get()))
     
-    def update(self, event:tk.Event=None):
-        '''
-        Atualizar aplicação.
-        '''
-        match event.widget:
-            case self.tree:
-                try: 
-                    id_item = int(self.tree.get_focus()['values'][0])
-                except: pass
+    def tree_events(self, event:tk.Event=None):
+        if self.tree.identify('region', event.x, event.y) == 'heading':
+            self.tree.set_orderby(self.tree.identify('column', event.x, event.y))
+            self.tree.update_items(self.storage.select(order=self.tree.orderby.get()))
+        else:
+            try: id_item = int(self.tree.get_focus()['values'][0])
+            except IndexError:pass
+            except: messagebox.showerror('Error!', traceback.format_exc())
+            else:
+                item = self.storage.select(where=f'id = {id_item}')[0]
+                if event.type == '4':
+                    self.vars['produto-selecionado'] = id_item
+                    self.form.set(*item)
+                    self.vars['button-registrar'].set('Modificar')
+                    self.vars['button-excluir'].set('Cancelar')
                 else:
-                    codigo, nome, p_venda, p_custo, quant, desc = self.storage.select(where=f'id = {id_item}')[0]
+                    codigo, nome, p_venda, p_custo, quant, desc = item
                     codigo, desc = str(codigo), str(desc)
                     while len(str(codigo)) < 5: codigo = '0' + codigo
-                    fal_rows = 10 - len(desc.split('\n'))
-                    text = '\n'.join([
+                    self.vars['detalhes'].set('\n'.join([
                         f'Código: {codigo}',
                         f'Nome: {nome}',
                         f'Preço de venda: R$ {br_currency(p_venda)}',
                         f'Preço de custo: R$ {br_currency(p_custo)}',
                         f'Quantidade: {quant}',
                         f'Descrição: {desc}',
-                        '\n'*fal_rows,
-                    ])
-                    self.vars['detalhes'].set(text)
-
-                    self.vars['produto-selecionado'] = id_item
-                    item = self.storage.select(where=f'id={id_item}')[0]
-                    for i, (entry, val) in enumerate(zip(self.entrys.values(), item)): 
-                        try: f = TABLE_INFO['estoque'][i][3] # tente obter a formatação
-                        except IndexError: entry.set(val) # se não houver, apenas selecione o valor
-                        else: entry.set(f(val)) # se houver, aplique a formatação
-                    self.vars['button-registrar'].set('Modificar')
-                    self.vars['button-excluir'].set('Cancelar')
+                        '\n'*(10 - len(desc.split('\n'))),
+                    ]))   
 
 '''
 class SalesController(tk.Frame):

@@ -34,31 +34,40 @@ class MoneyEntry(StylisedEntry):
 
         self['validate'] = 'key'
         self['validatecommand'] = (self.register(self.on_validate), '%S')
-        self.bind('<KeyRelease>', self.formatting)
-        self.formatting()
+        self.bind('<KeyRelease>', self.key_released)
+        self.set()
     
     def clear(self):
         self.delete(0, tk.END)
-        self.formatting()
+        self.set()
     
-    def formatting(self, event:tk.Event=None) -> None:
-        value = ''.join(filter(lambda char: char.isnumeric(), StylisedEntry.get(self))).lstrip('0')
+    def formatting(self, value:str) -> str:
+        value = ''.join(filter(lambda char: char.isnumeric(), value)).lstrip('0') 
         #print('formatando', value)
         len_value =  len(value)
         if len_value < 3: value = '0'*(3 - len_value) + value
-        self.set('R$ {},{}'.format(value[:-2], value[-2:]))
+        return 'R$ {},{}'.format(value[:-2], value[-2:])
     
     def get(self) -> float:
         value = StylisedEntry.get(self).lstrip('R$ ').replace(',', '.')
         return float(value) if value else 0
     
+    def key_released(self, event:tk.Event) -> None:
+        self.set(StylisedEntry.get(self))
+    
     def on_validate(self, S:str) -> bool:
         #print('validando', S)
         if len(S) > 1:
-            RS, val = S.split(' ')
-            return (RS == 'R$' and val.replace(',', '').isalnum())
+            try:
+                RS, val = S.split(' ')
+                return (RS == 'R$' and val.replace(',', '').isalnum())
+            except ValueError: 
+                return False
         else:
             return S.isnumeric()
+    
+    def set(self, value:str='') -> None:
+        StylisedEntry.set(self, self.formatting(value))
 
 class StylisedText(tk.Text):
     def __init__(self, *args, **kwargs):
@@ -100,6 +109,10 @@ class Form(ttk.LabelFrame):
     
     def get(self) -> dict:
         return {key:entry.get() for key, entry in self.entrys.items() if entry.get()}
+    
+    def set(self, *args, **kwargs) -> None:
+        for entry, value in zip(self.entrys.values(), args): entry.set(str(value))
+        for key, value in kwargs.items(): self.entrys[key] = str(value)
 
 @dataclass
 class OrderBy:
@@ -128,7 +141,6 @@ class Treeview(ttk.Treeview):
 
         for event_tag, function in bindings:
             self.bind(event_tag, function)
-        self.bind('<<Double-1>>', self.double_click)
 
         self.height = self.cget('height')
         self.ncols = len(self.table_info)
@@ -139,10 +151,6 @@ class Treeview(ttk.Treeview):
         self.configure(yscroll=self.scrollbar.set)
         self.scrollbar.pack(side=tk.RIGHT, fill='y')
         self.scrollbar.config(command=self.yview)
-    
-    def double_click(self, event:tk.Event) -> None:
-        if self.identify('region', event.x, event.y) == 'heading':
-            self.set_orderby(self.identify('column', event.x, event.y))
     
     def get_focus(self) -> dict:
         return self.item(self.focus())

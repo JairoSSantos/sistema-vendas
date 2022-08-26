@@ -4,7 +4,7 @@ COLORS = (
     '#323031', # text
     '#177E89', # entrys
     '#FFE8B9', # treeview
-    '#FFC857' # treeview heading
+    '#fab425' #FFC857' # treeview heading
 )
 
 # FONTS
@@ -87,7 +87,7 @@ SETTINGS_MAIN = {
     'Treeview.Heading':{
         'configure':{
             'background':COLORS[5],
-            'foreground':COLORS[0],
+            'foreground':'white',
             'font':FONTS[2]
         }
     },
